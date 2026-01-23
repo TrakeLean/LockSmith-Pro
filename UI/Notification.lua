@@ -180,28 +180,36 @@ local function CreateNotificationPopup()
     yourSkill:SetText("Your Skill: 1")
     frame.yourSkill = yourSkill
 
-    -- Buttons
-    local btnY = 20
+    -- Buttons (4 buttons in 2 rows)
+    local btnY1 = 45  -- Top row
+    local btnY2 = 15  -- Bottom row
 
-    -- Invite button
+    -- Invite button (top left)
     local inviteBtn = CreateFrame("Button", "LockSmithNotifyInviteBtn", frame, "GameMenuButtonTemplate")
-    inviteBtn:SetSize(100, 25)
-    inviteBtn:SetPoint("BOTTOMLEFT", 30, btnY)
+    inviteBtn:SetSize(90, 25)
+    inviteBtn:SetPoint("BOTTOMLEFT", 25, btnY1)
     inviteBtn:SetText("Invite")
     frame.inviteBtn = inviteBtn
 
-    -- Whisper button
+    -- Whisper button (top right)
     local whisperBtn = CreateFrame("Button", "LockSmithNotifyWhisperBtn", frame, "GameMenuButtonTemplate")
-    whisperBtn:SetSize(100, 25)
-    whisperBtn:SetPoint("BOTTOM", 0, btnY)
+    whisperBtn:SetSize(90, 25)
+    whisperBtn:SetPoint("BOTTOMRIGHT", -25, btnY1)
     whisperBtn:SetText("Whisper")
     frame.whisperBtn = whisperBtn
 
-    -- Ignore button
+    -- Ignore Session button (bottom left)
+    local ignoreSessionBtn = CreateFrame("Button", "LockSmithNotifyIgnoreSessionBtn", frame, "GameMenuButtonTemplate")
+    ignoreSessionBtn:SetSize(90, 25)
+    ignoreSessionBtn:SetPoint("BOTTOMLEFT", 25, btnY2)
+    ignoreSessionBtn:SetText("Ignore Session")
+    frame.ignoreSessionBtn = ignoreSessionBtn
+
+    -- Dismiss button (bottom right)
     local ignoreBtn = CreateFrame("Button", "LockSmithNotifyIgnoreBtn", frame, "GameMenuButtonTemplate")
-    ignoreBtn:SetSize(100, 25)
-    ignoreBtn:SetPoint("BOTTOMRIGHT", -30, btnY)
-    ignoreBtn:SetText("Ignore")
+    ignoreBtn:SetSize(90, 25)
+    ignoreBtn:SetPoint("BOTTOMRIGHT", -25, btnY2)
+    ignoreBtn:SetText("Dismiss")
     frame.ignoreBtn = ignoreBtn
 
     return frame
@@ -250,6 +258,11 @@ function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requir
     activeNotification.whisperBtn:SetScript("OnClick", function(self)
         -- Open whisper window
         ChatFrame_SendTell(sender)
+        activeNotification:Hide()
+    end)
+
+    activeNotification.ignoreSessionBtn:SetScript("OnClick", function(self)
+        LockSmith.ChatMonitor:AddToSessionIgnore(sender)
         activeNotification:Hide()
     end)
 

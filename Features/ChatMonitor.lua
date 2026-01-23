@@ -6,6 +6,7 @@ LockSmith.ChatMonitor = {}
 
 local lastInviteTime = {}
 local INVITE_THROTTLE = 30
+local sessionIgnoreList = {}
 
 local function NormalizeSenderName(name)
     if type(name) ~= "string" then
@@ -69,12 +70,33 @@ local function IsGroupMember(name)
     return false
 end
 
+-- Session ignore list management
+function LockSmith.ChatMonitor:AddToSessionIgnore(sender)
+    local normalized = NormalizeSenderName(sender)
+    if normalized ~= "" then
+        sessionIgnoreList[normalized] = true
+        print("|cff00ff00LockSmith:|r Ignoring " .. sender .. " for this session")
+    end
+end
+
+function LockSmith.ChatMonitor:ClearSessionIgnore()
+    sessionIgnoreList = {}
+end
+
+function LockSmith.ChatMonitor:IsSessionIgnored(sender)
+    local normalized = NormalizeSenderName(sender)
+    return sessionIgnoreList[normalized] == true
+end
+
 -- Process lockpick request from chat
 function LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelName, channelNumber)
     if not LockSmith:IsRunning() then return end
 
     -- Don't process our own messages
     if self:IsSelfSender(sender) then return end
+
+    -- Check if sender is ignored for this session
+    if self:IsSessionIgnored(sender) then return end
 
     -- Check if message has lockpicking keywords
     if not LockSmith:HasLockpickKeyword(message) then return end

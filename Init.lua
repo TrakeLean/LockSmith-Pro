@@ -176,6 +176,9 @@ function LockSmith:Stop()
 
     -- Stop ad timer
     LockSmith.Advertisement:StopAdTimer()
+
+    -- Clear session ignore list
+    LockSmith.ChatMonitor:ClearSessionIgnore()
 end
 
 -- Toggle addon on/off
