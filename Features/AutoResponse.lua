@@ -42,5 +42,7 @@ function LockSmith.AutoResponse:SendThankYouWhisper(target, tipAmount)
     local tipText = LockSmith.Utils:FormatGold(tipAmount or 0)
     message = string.gsub(message, "%%TIP%%", tipText)
 
-    return LockSmith.Utils:SendThrottledWhisper(target, message)
+    -- Send thank-you without throttling (trade just completed, important message)
+    SendChatMessage(message, "WHISPER", nil, target)
+    return true
 end

@@ -8,33 +8,45 @@ local activeNotification = nil
 local activeAdNotification = nil
 
 local function HideDialogButtons(frame)
-    if not frame or not frame.GetName then return end
+    if not frame then return end
 
-    local name = frame:GetName()
-    local buttonNames = { "Button1", "Button2", "Button3" }
-    for _, suffix in ipairs(buttonNames) do
-        local btn = _G[name .. suffix]
-        if btn then
-            btn:Hide()
-            btn:Disable()
-            btn:EnableMouse(false)
+    -- Hide template buttons by name
+    if frame.GetName and frame:GetName() then
+        local name = frame:GetName()
+        for i = 1, 3 do
+            local btn = _G[name .. "Button" .. i]
+            if btn then
+                btn:Hide()
+                btn:SetAlpha(0)
+                btn:EnableMouse(false)
+                btn:SetScript("OnClick", nil)
+            end
         end
     end
 
-    if frame.button1 then
-        frame.button1:Hide()
-        frame.button1:Disable()
-        frame.button1:EnableMouse(false)
+    -- Hide button references
+    for i = 1, 3 do
+        local btnName = "button" .. i
+        if frame[btnName] then
+            frame[btnName]:Hide()
+            frame[btnName]:SetAlpha(0)
+            frame[btnName]:EnableMouse(false)
+            frame[btnName]:SetScript("OnClick", nil)
+        end
     end
-    if frame.button2 then
-        frame.button2:Hide()
-        frame.button2:Disable()
-        frame.button2:EnableMouse(false)
-    end
-    if frame.button3 then
-        frame.button3:Hide()
-        frame.button3:Disable()
-        frame.button3:EnableMouse(false)
+
+    -- Force hide all children that look like buttons
+    if frame.GetChildren then
+        for _, child in ipairs({frame:GetChildren()}) do
+            if child.GetObjectType and child:GetObjectType() == "Button" then
+                local name = child:GetName()
+                if name and (string.find(name, "Button") or name == "button1" or name == "button2" or name == "button3") then
+                    child:Hide()
+                    child:SetAlpha(0)
+                    child:EnableMouse(false)
+                end
+            end
+        end
     end
 end
 
