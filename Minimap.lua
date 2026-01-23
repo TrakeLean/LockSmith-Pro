@@ -2,6 +2,7 @@
 -- Minimap button for LockSmith
 
 LockSmith = LockSmith or {}
+LockSmith.Minimap = {}
 
 local minimapButton = nil
 local isDragging = false
@@ -82,7 +83,7 @@ local function CreateMinimapButton()
     button:SetScript("OnDragStart", function(self)
         isDragging = true
         self:LockHighlight()
-        self:SetScript("OnUpdate", LockSmith.UpdateMinimapButtonPosition)
+        self:SetScript("OnUpdate", function() LockSmith.Minimap:UpdateButtonPosition() end)
     end)
 
     button:SetScript("OnDragStop", function(self)
@@ -91,7 +92,7 @@ local function CreateMinimapButton()
         self:SetScript("OnUpdate", nil)
 
         -- Save position
-        local position = LockSmith:GetMinimapButtonAngle()
+        local position = LockSmith.Minimap:GetButtonAngle()
         LockSmithDB.minimapPosition = position
     end)
 
@@ -100,7 +101,7 @@ local function CreateMinimapButton()
 end
 
 -- Update minimap button position while dragging
-function LockSmith:UpdateMinimapButtonPosition()
+function LockSmith.Minimap:UpdateButtonPosition()
     if not minimapButton then return end
 
     local mx, my = Minimap:GetCenter()
@@ -112,11 +113,11 @@ function LockSmith:UpdateMinimapButtonPosition()
     local angle = math.deg(math.atan2(py - my, px - mx))
 
     LockSmithDB.minimapPosition = angle
-    LockSmith:SetMinimapButtonPosition(angle)
+    self:SetButtonPosition(angle)
 end
 
 -- Set minimap button position by angle
-function LockSmith:SetMinimapButtonPosition(angle)
+function LockSmith.Minimap:SetButtonPosition(angle)
     if not minimapButton then return end
 
     local radius = 80
@@ -129,7 +130,7 @@ function LockSmith:SetMinimapButtonPosition(angle)
 end
 
 -- Get current minimap button angle
-function LockSmith:GetMinimapButtonAngle()
+function LockSmith.Minimap:GetButtonAngle()
     if not minimapButton then return 0 end
 
     local mx, my = Minimap:GetCenter()
@@ -142,7 +143,7 @@ function LockSmith:GetMinimapButtonAngle()
 end
 
 -- Initialize minimap button
-function LockSmith:InitializeMinimapButton()
+function LockSmith.Minimap:InitializeButton()
     if minimapButton then return end
 
     -- Create button
@@ -150,7 +151,7 @@ function LockSmith:InitializeMinimapButton()
 
     -- Set initial position
     local angle = LockSmithDB.minimapPosition or 225
-    self:SetMinimapButtonPosition(angle)
+    self:SetButtonPosition(angle)
 
     -- Show/hide based on settings
     if LockSmithDB.minimapButtonHidden then
@@ -161,30 +162,30 @@ function LockSmith:InitializeMinimapButton()
 end
 
 -- Show/hide minimap button
-function LockSmith:ShowMinimapButton()
+function LockSmith.Minimap:ShowButton()
     if minimapButton then
         minimapButton:Show()
         LockSmithDB.minimapButtonHidden = false
     end
 end
 
-function LockSmith:HideMinimapButton()
+function LockSmith.Minimap:HideButton()
     if minimapButton then
         minimapButton:Hide()
         LockSmithDB.minimapButtonHidden = true
     end
 end
 
-function LockSmith:ToggleMinimapButton()
+function LockSmith.Minimap:ToggleButton()
     if LockSmithDB.minimapButtonHidden then
-        self:ShowMinimapButton()
+        self:ShowButton()
     else
-        self:HideMinimapButton()
+        self:HideButton()
     end
 end
 
 -- Update minimap button icon based on status
-function LockSmith:UpdateMinimapButtonStatus()
+function LockSmith.Minimap:UpdateButtonStatus()
     if not minimapButton then return end
 
     -- Could change icon color/appearance based on running status

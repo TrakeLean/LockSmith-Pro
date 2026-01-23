@@ -5,7 +5,24 @@
 ## Version: 1.0.0
 ## SavedVariables: LockSmithDB
 
+# Data
 Database.lua
-Core.lua
+
+# Core Systems
+Utils.lua
+Skills.lua
+Statistics.lua
+
+# Features
+Advertisement.lua
+AutoResponse.lua
+ChatMonitor.lua
+
+# UI
+Notification.lua
+Settings.lua
 Minimap.lua
-GUI.lua
+
+# Initialization
+Init.lua
+SlashCommands.lua

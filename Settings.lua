@@ -1,14 +1,8 @@
--- GUI.lua
--- User interface components for LockSmith
+-- Settings.lua
+-- Settings panel UI
 
 LockSmith = LockSmith or {}
-
-local notificationQueue = {}
-local activeNotification = nil
-
--- ================================
--- Settings Panel
--- ================================
+LockSmith.UI = LockSmith.UI or {}
 
 local function CreateSettingsPanel()
     -- Main settings frame
@@ -60,7 +54,7 @@ local function CreateSettingsPanel()
         local statusText = _G["LockSmithStatusText"]
         if statusText then
             if LockSmith:IsRunning() then
-                local skill, maxSkill = LockSmith:GetLockpickingSkill()
+                local skill, maxSkill = LockSmith.Skills:GetLockpickingSkill()
                 statusText:SetText("|cff00ff00Status: Running|r (Skill: " .. skill .. "/" .. maxSkill .. ")")
             else
                 statusText:SetText("|cffff0000Status: Stopped|r")
@@ -73,7 +67,7 @@ local function CreateSettingsPanel()
     local statusText = scrollChild:CreateFontString("LockSmithStatusText", "ARTWORK", "GameFontNormal")
     statusText:SetPoint("TOPLEFT", 16, yOffset)
     if LockSmith:IsRunning() then
-        local skill, maxSkill = LockSmith:GetLockpickingSkill()
+        local skill, maxSkill = LockSmith.Skills:GetLockpickingSkill()
         statusText:SetText("|cff00ff00Status: Running|r (Skill: " .. skill .. "/" .. maxSkill .. ")")
     else
         statusText:SetText("|cffff0000Status: Stopped|r")
@@ -169,7 +163,7 @@ local function CreateSettingsPanel()
     sendAdBtn:SetSize(150, 25)
     sendAdBtn:SetText("Send Advertisement")
     sendAdBtn:SetScript("OnClick", function(self)
-        LockSmith:SendAdvertisement()
+        LockSmith.Advertisement:SendAdvertisement()
     end)
     yOffset = yOffset - 35
 
@@ -217,9 +211,9 @@ local function CreateSettingsPanel()
     timerCheckbox:SetScript("OnClick", function(self)
         LockSmithDB.adTimerEnabled = self:GetChecked()
         if self:GetChecked() and LockSmith:IsRunning() then
-            LockSmith:StartAdTimer()
+            LockSmith.Advertisement:StartAdTimer()
         else
-            LockSmith:StopAdTimer()
+            LockSmith.Advertisement:StopAdTimer()
         end
     end)
     yOffset = yOffset - 30
@@ -238,7 +232,7 @@ local function CreateSettingsPanel()
         LockSmithDB.adTimerInterval = value
         _G[self:GetName() .. "Text"]:SetText("Timer Interval: " .. value .. "s")
         if LockSmithDB.adTimerEnabled and LockSmith:IsRunning() then
-            LockSmith:StartAdTimer()
+            LockSmith.Advertisement:StartAdTimer()
         end
     end)
     yOffset = yOffset - 50
@@ -294,7 +288,7 @@ local function CreateSettingsPanel()
     -- Total gold
     local totalGoldText = scrollChild:CreateFontString("LockSmithTotalGoldText", "ARTWORK", "GameFontNormal")
     totalGoldText:SetPoint("TOPLEFT", 16, yOffset)
-    totalGoldText:SetText("Total Gold Earned: " .. LockSmith:FormatGold(LockSmithDB.stats.totalGold))
+    totalGoldText:SetText("Total Gold Earned: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold))
     yOffset = yOffset - 20
 
     -- Total jobs
@@ -304,19 +298,16 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Average tip
-    local avgTip = 0
-    if LockSmithDB.stats.totalJobs > 0 then
-        avgTip = math.floor(LockSmithDB.stats.totalGold / LockSmithDB.stats.totalJobs)
-    end
+    local avgTip = LockSmith.Statistics:GetAverageTip()
     local avgTipText = scrollChild:CreateFontString("LockSmithAvgTipText", "ARTWORK", "GameFontNormal")
     avgTipText:SetPoint("TOPLEFT", 16, yOffset)
-    avgTipText:SetText("Average Tip: " .. LockSmith:FormatGold(avgTip))
+    avgTipText:SetText("Average Tip: " .. LockSmith.Utils:FormatGold(avgTip))
     yOffset = yOffset - 20
 
     -- Last session gold
     local lastSessionText = scrollChild:CreateFontString("LockSmithLastSessionText", "ARTWORK", "GameFontNormal")
     lastSessionText:SetPoint("TOPLEFT", 16, yOffset)
-    lastSessionText:SetText("Last Session: " .. LockSmith:FormatGold(LockSmithDB.stats.lastSessionGold))
+    lastSessionText:SetText("Last Session: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold))
     yOffset = yOffset - 30
 
     -- Refresh stats button
@@ -325,15 +316,12 @@ local function CreateSettingsPanel()
     refreshStatsBtn:SetSize(120, 25)
     refreshStatsBtn:SetText("Refresh Stats")
     refreshStatsBtn:SetScript("OnClick", function(self)
-        _G["LockSmithTotalGoldText"]:SetText("Total Gold Earned: " .. LockSmith:FormatGold(LockSmithDB.stats.totalGold))
+        _G["LockSmithTotalGoldText"]:SetText("Total Gold Earned: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold))
         _G["LockSmithTotalJobsText"]:SetText("Total Jobs Completed: " .. LockSmithDB.stats.totalJobs)
 
-        local avg = 0
-        if LockSmithDB.stats.totalJobs > 0 then
-            avg = math.floor(LockSmithDB.stats.totalGold / LockSmithDB.stats.totalJobs)
-        end
-        _G["LockSmithAvgTipText"]:SetText("Average Tip: " .. LockSmith:FormatGold(avg))
-        _G["LockSmithLastSessionText"]:SetText("Last Session: " .. LockSmith:FormatGold(LockSmithDB.stats.lastSessionGold))
+        local avg = LockSmith.Statistics:GetAverageTip()
+        _G["LockSmithAvgTipText"]:SetText("Average Tip: " .. LockSmith.Utils:FormatGold(avg))
+        _G["LockSmithLastSessionText"]:SetText("Last Session: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold))
     end)
     yOffset = yOffset - 40
 
@@ -343,9 +331,7 @@ local function CreateSettingsPanel()
     resetStatsBtn:SetSize(120, 25)
     resetStatsBtn:SetText("Reset Stats")
     resetStatsBtn:SetScript("OnClick", function(self)
-        LockSmithDB.stats.totalGold = 0
-        LockSmithDB.stats.totalJobs = 0
-        LockSmithDB.stats.lastSessionGold = 0
+        LockSmith.Statistics:ResetStats()
 
         _G["LockSmithTotalGoldText"]:SetText("Total Gold Earned: 0c")
         _G["LockSmithTotalJobsText"]:SetText("Total Jobs Completed: 0")
@@ -361,135 +347,8 @@ local function CreateSettingsPanel()
     return panel
 end
 
--- ================================
--- Notification Popup
--- ================================
-
-local function CreateNotificationPopup()
-    -- Main frame
-    local frame = CreateFrame("Frame", "LockSmithNotificationPopup", UIParent, "DialogBoxFrame")
-    frame:SetSize(400, 200)
-    frame:SetPoint("TOP", 0, -100)
-    frame:SetFrameStrata("DIALOG")
-    frame:Hide()
-
-    -- Make draggable
-    frame:SetMovable(true)
-    frame:EnableMouse(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", frame.StartMoving)
-    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-
-    -- Title
-    local titleBg = frame:CreateTexture(nil, "BACKGROUND")
-    titleBg:SetTexture(0, 0, 0, 0.8)
-    titleBg:SetPoint("TOPLEFT", 5, -5)
-    titleBg:SetPoint("TOPRIGHT", -5, -5)
-    titleBg:SetHeight(30)
-
-    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOP", 0, -15)
-    title:SetText("|cff00ff00Lockpick Request|r")
-    frame.title = title
-
-    -- Player name
-    local playerName = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    playerName:SetPoint("TOP", 0, -50)
-    playerName:SetText("Player: Unknown")
-    frame.playerName = playerName
-
-    -- Box info
-    local boxInfo = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    boxInfo:SetPoint("TOP", 0, -70)
-    boxInfo:SetText("Box: Unknown")
-    frame.boxInfo = boxInfo
-
-    -- Skill info
-    local skillInfo = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    skillInfo:SetPoint("TOP", 0, -90)
-    skillInfo:SetText("Required Skill: 1")
-    frame.skillInfo = skillInfo
-
-    -- Your skill
-    local yourSkill = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    yourSkill:SetPoint("TOP", 0, -110)
-    yourSkill:SetText("Your Skill: 1")
-    frame.yourSkill = yourSkill
-
-    -- Buttons
-    local btnY = -150
-
-    -- Invite button
-    local inviteBtn = CreateFrame("Button", "LockSmithNotifyInviteBtn", frame, "GameMenuButtonTemplate")
-    inviteBtn:SetSize(100, 25)
-    inviteBtn:SetPoint("TOPLEFT", 30, btnY)
-    inviteBtn:SetText("Invite")
-    frame.inviteBtn = inviteBtn
-
-    -- Whisper button
-    local whisperBtn = CreateFrame("Button", "LockSmithNotifyWhisperBtn", frame, "GameMenuButtonTemplate")
-    whisperBtn:SetSize(100, 25)
-    whisperBtn:SetPoint("TOP", 0, btnY)
-    whisperBtn:SetText("Whisper")
-    frame.whisperBtn = whisperBtn
-
-    -- Ignore button
-    local ignoreBtn = CreateFrame("Button", "LockSmithNotifyIgnoreBtn", frame, "GameMenuButtonTemplate")
-    ignoreBtn:SetSize(100, 25)
-    ignoreBtn:SetPoint("TOPRIGHT", -30, btnY)
-    ignoreBtn:SetText("Ignore")
-    frame.ignoreBtn = ignoreBtn
-
-    return frame
-end
-
--- Show notification popup
-function LockSmith:ShowNotificationPopup(sender, boxData, channelName, requiredSkill)
-    -- Create popup if it doesn't exist
-    if not activeNotification then
-        activeNotification = CreateNotificationPopup()
-    end
-
-    -- Update info
-    activeNotification.playerName:SetText("|cffffffff Player:|r " .. sender)
-
-    if boxData then
-        activeNotification.boxInfo:SetText("|cffffffff Box:|r " .. boxData.name)
-        activeNotification.skillInfo:SetText("|cffffffff Required Skill:|r " .. boxData.skill)
-    else
-        activeNotification.boxInfo:SetText("|cffffffff Box:|r Unknown (Generic Request)")
-        activeNotification.skillInfo:SetText("|cffffffff Required Skill:|r Unknown")
-    end
-
-    local currentSkill, maxSkill = self:GetLockpickingSkill()
-    activeNotification.yourSkill:SetText("|cff00ff00 Your Skill:|r " .. currentSkill .. "/" .. maxSkill)
-
-    -- Setup button actions
-    activeNotification.inviteBtn:SetScript("OnClick", function(self)
-        InviteUnit(sender)
-        print("|cff00ff00LockSmith:|r Invited " .. sender)
-        activeNotification:Hide()
-    end)
-
-    activeNotification.whisperBtn:SetScript("OnClick", function(self)
-        -- Open whisper window
-        ChatFrame_SendTell(sender)
-        activeNotification:Hide()
-    end)
-
-    activeNotification.ignoreBtn:SetScript("OnClick", function(self)
-        activeNotification:Hide()
-    end)
-
-    -- Play sound
-    PlaySound("TellMessage")
-
-    -- Show popup
-    activeNotification:Show()
-end
-
 -- Open settings GUI
-function LockSmith:OpenSettingsGUI()
+function LockSmith.UI:OpenSettingsGUI()
     -- Create settings panel if it doesn't exist
     if not _G["LockSmithSettingsPanel"] then
         CreateSettingsPanel()
