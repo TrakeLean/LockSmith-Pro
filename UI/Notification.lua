@@ -5,12 +5,97 @@ LockSmith = LockSmith or {}
 LockSmith.UI = LockSmith.UI or {}
 
 local activeNotification = nil
+local activeAdNotification = nil
+
+local function HideDialogButtons(frame)
+    if not frame or not frame.GetName then return end
+
+    local name = frame:GetName()
+    local buttonNames = { "Button1", "Button2", "Button3" }
+    for _, suffix in ipairs(buttonNames) do
+        local btn = _G[name .. suffix]
+        if btn then
+            btn:Hide()
+            btn:Disable()
+            btn:EnableMouse(false)
+        end
+    end
+
+    if frame.button1 then
+        frame.button1:Hide()
+        frame.button1:Disable()
+        frame.button1:EnableMouse(false)
+    end
+    if frame.button2 then
+        frame.button2:Hide()
+        frame.button2:Disable()
+        frame.button2:EnableMouse(false)
+    end
+    if frame.button3 then
+        frame.button3:Hide()
+        frame.button3:Disable()
+        frame.button3:EnableMouse(false)
+    end
+end
+
+local function PlayNotificationSound()
+    if SOUNDKIT and SOUNDKIT.TELL_MESSAGE then
+        PlaySound(SOUNDKIT.TELL_MESSAGE, "Master")
+        return
+    end
+
+    if PlaySound then
+        PlaySound("TellMessage")
+    end
+end
+
+local function CreateAdReadyPopup()
+    local frame = CreateFrame("Frame", "LockSmithAdReadyPopup", UIParent, "DialogBoxFrame")
+    frame:SetSize(380, 170)
+    frame:SetPoint("TOP", 0, -140)
+    frame:SetFrameStrata("DIALOG")
+    frame:Hide()
+
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    HideDialogButtons(frame)
+
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", 0, -15)
+    title:SetText("|cff00ff00Advertisement Ready|r")
+    frame.title = title
+
+    local message = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    message:SetPoint("TOP", 0, -45)
+    message:SetWidth(320)
+    message:SetJustifyH("CENTER")
+    message:SetJustifyV("TOP")
+    message:SetText("Click Send to post your ad.")
+    frame.message = message
+
+    local sendBtn = CreateFrame("Button", "LockSmithAdReadySendBtn", frame, "GameMenuButtonTemplate")
+    sendBtn:SetSize(120, 25)
+    sendBtn:SetPoint("BOTTOMLEFT", 40, 20)
+    sendBtn:SetText("Send Now")
+    frame.sendBtn = sendBtn
+
+    local dismissBtn = CreateFrame("Button", "LockSmithAdReadyDismissBtn", frame, "GameMenuButtonTemplate")
+    dismissBtn:SetSize(120, 25)
+    dismissBtn:SetPoint("BOTTOMRIGHT", -40, 20)
+    dismissBtn:SetText("Dismiss")
+    frame.dismissBtn = dismissBtn
+
+    return frame
+end
 
 -- Create notification popup
 local function CreateNotificationPopup()
     -- Main frame
     local frame = CreateFrame("Frame", "LockSmithNotificationPopup", UIParent, "DialogBoxFrame")
-    frame:SetSize(400, 200)
+    frame:SetSize(400, 250)
     frame:SetPoint("TOP", 0, -100)
     frame:SetFrameStrata("DIALOG")
     frame:Hide()
@@ -21,6 +106,7 @@ local function CreateNotificationPopup()
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    HideDialogButtons(frame)
 
     -- Title
     local titleBg = frame:CreateTexture(nil, "BACKGROUND")
@@ -37,48 +123,72 @@ local function CreateNotificationPopup()
     -- Player name
     local playerName = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     playerName:SetPoint("TOP", 0, -50)
+    playerName:SetWidth(340)
+    playerName:SetJustifyH("CENTER")
+    playerName:SetJustifyV("TOP")
     playerName:SetText("Player: Unknown")
     frame.playerName = playerName
 
+    -- Message text
+    local requestText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    requestText:SetPoint("TOP", playerName, "BOTTOM", 0, -6)
+    requestText:SetWidth(340)
+    requestText:SetJustifyH("CENTER")
+    requestText:SetJustifyV("TOP")
+    if requestText.SetWordWrap then
+        requestText:SetWordWrap(true)
+    end
+    requestText:SetText("Message: ")
+    frame.requestText = requestText
+
     -- Box info
     local boxInfo = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    boxInfo:SetPoint("TOP", 0, -70)
+    boxInfo:SetPoint("TOP", requestText, "BOTTOM", 0, -8)
+    boxInfo:SetWidth(340)
+    boxInfo:SetJustifyH("CENTER")
+    boxInfo:SetJustifyV("TOP")
     boxInfo:SetText("Box: Unknown")
     frame.boxInfo = boxInfo
 
     -- Skill info
     local skillInfo = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    skillInfo:SetPoint("TOP", 0, -90)
+    skillInfo:SetPoint("TOP", boxInfo, "BOTTOM", 0, -4)
+    skillInfo:SetWidth(340)
+    skillInfo:SetJustifyH("CENTER")
+    skillInfo:SetJustifyV("TOP")
     skillInfo:SetText("Required Skill: 1")
     frame.skillInfo = skillInfo
 
     -- Your skill
     local yourSkill = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    yourSkill:SetPoint("TOP", 0, -110)
+    yourSkill:SetPoint("TOP", skillInfo, "BOTTOM", 0, -4)
+    yourSkill:SetWidth(340)
+    yourSkill:SetJustifyH("CENTER")
+    yourSkill:SetJustifyV("TOP")
     yourSkill:SetText("Your Skill: 1")
     frame.yourSkill = yourSkill
 
     -- Buttons
-    local btnY = -150
+    local btnY = 20
 
     -- Invite button
     local inviteBtn = CreateFrame("Button", "LockSmithNotifyInviteBtn", frame, "GameMenuButtonTemplate")
     inviteBtn:SetSize(100, 25)
-    inviteBtn:SetPoint("TOPLEFT", 30, btnY)
+    inviteBtn:SetPoint("BOTTOMLEFT", 30, btnY)
     inviteBtn:SetText("Invite")
     frame.inviteBtn = inviteBtn
 
     -- Whisper button
     local whisperBtn = CreateFrame("Button", "LockSmithNotifyWhisperBtn", frame, "GameMenuButtonTemplate")
     whisperBtn:SetSize(100, 25)
-    whisperBtn:SetPoint("TOP", 0, btnY)
+    whisperBtn:SetPoint("BOTTOM", 0, btnY)
     whisperBtn:SetText("Whisper")
     frame.whisperBtn = whisperBtn
 
     -- Ignore button
     local ignoreBtn = CreateFrame("Button", "LockSmithNotifyIgnoreBtn", frame, "GameMenuButtonTemplate")
     ignoreBtn:SetSize(100, 25)
-    ignoreBtn:SetPoint("TOPRIGHT", -30, btnY)
+    ignoreBtn:SetPoint("BOTTOMRIGHT", -30, btnY)
     ignoreBtn:SetText("Ignore")
     frame.ignoreBtn = ignoreBtn
 
@@ -86,7 +196,7 @@ local function CreateNotificationPopup()
 end
 
 -- Show notification popup
-function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requiredSkill)
+function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requiredSkill, message)
     -- Create popup if it doesn't exist
     if not activeNotification then
         activeNotification = CreateNotificationPopup()
@@ -94,6 +204,15 @@ function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requir
 
     -- Update info
     activeNotification.playerName:SetText("|cffffffff Player:|r " .. sender)
+    if type(message) == "string" and message ~= "" then
+        local trimmed = message
+        if string.len(trimmed) > 200 then
+            trimmed = string.sub(trimmed, 1, 197) .. "..."
+        end
+        activeNotification.requestText:SetText("|cffffffff Message:|r " .. trimmed)
+    else
+        activeNotification.requestText:SetText("|cffffffff Message:|r (none)")
+    end
 
     if boxData then
         activeNotification.boxInfo:SetText("|cffffffff Box:|r " .. boxData.name)
@@ -108,8 +227,11 @@ function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requir
 
     -- Setup button actions
     activeNotification.inviteBtn:SetScript("OnClick", function(self)
-        InviteUnit(sender)
-        print("|cff00ff00LockSmith:|r Invited " .. sender)
+        if LockSmith.Utils and LockSmith.Utils.InvitePlayer and LockSmith.Utils:InvitePlayer(sender) then
+            print("|cff00ff00LockSmith:|r Invited " .. sender)
+        else
+            print("|cffff0000LockSmith:|r Unable to invite " .. sender)
+        end
         activeNotification:Hide()
     end)
 
@@ -124,8 +246,41 @@ function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requir
     end)
 
     -- Play sound
-    PlaySound("TellMessage")
+    PlayNotificationSound()
 
     -- Show popup
     activeNotification:Show()
+end
+
+function LockSmith.UI:ShowAdReadyPopup()
+    if not activeAdNotification then
+        activeAdNotification = CreateAdReadyPopup()
+    end
+
+    local msg = LockSmithDB and LockSmithDB.adMessage or ""
+    if msg == "" then
+        msg = "No advertisement message set."
+    end
+    activeAdNotification.message:SetText("|cffffffffMessage:|r " .. msg)
+
+    activeAdNotification.sendBtn:SetScript("OnClick", function()
+        LockSmith.Advertisement:SendAdvertisement()
+    end)
+
+    activeAdNotification.dismissBtn:SetScript("OnClick", function()
+        if LockSmith.Advertisement and LockSmith.Advertisement.ClearAdReady then
+            LockSmith.Advertisement:ClearAdReady()
+        else
+            activeAdNotification:Hide()
+        end
+    end)
+
+    PlayNotificationSound()
+    activeAdNotification:Show()
+end
+
+function LockSmith.UI:HideAdReadyPopup()
+    if activeAdNotification then
+        activeAdNotification:Hide()
+    end
 end

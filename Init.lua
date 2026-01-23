@@ -25,6 +25,7 @@ local defaultSettings = {
         trade = true,
         general = true,
         lfg = false,
+        yell = false,
     },
     adTimerEnabled = false,
     adTimerInterval = 60, -- seconds (default 1 minute)
@@ -32,18 +33,25 @@ local defaultSettings = {
     -- Auto-response settings
     lowSkillWhisper = true,
     lowSkillMessage = "Sorry, my lockpicking skill (%CURRENT%) is too low for that box (requires %REQUIRED%)",
+    thankYouWhisper = true,
+    thankYouMessage = "Thank you for the tip! (%TIP%)",
+    autoInviteWhisper = false,
 
     -- Statistics
     stats = {
         totalGold = 0,
         totalJobs = 0,
         lastSessionGold = 0,
+        totalBoxes = 0,
+        boxesOpened = {},
     },
 
     -- Minimap button
     minimapPosition = 225,
     minimapButtonHidden = false,
 }
+
+LockSmith.DefaultSettings = defaultSettings
 
 -- Initialize saved variables
 local function InitializeSavedVariables()
@@ -70,6 +78,58 @@ local function InitializeSavedVariables()
                 LockSmithDB[key] = value
             end
         end
+    end
+
+    -- Ensure key strings always have defaults (avoid nil/empty errors)
+    if type(LockSmithDB.adMessage) ~= "string" or LockSmithDB.adMessage == "" then
+        LockSmithDB.adMessage = defaultSettings.adMessage
+    end
+    if type(LockSmithDB.lowSkillMessage) ~= "string" or LockSmithDB.lowSkillMessage == "" then
+        LockSmithDB.lowSkillMessage = defaultSettings.lowSkillMessage
+    end
+    if type(LockSmithDB.thankYouMessage) ~= "string" or LockSmithDB.thankYouMessage == "" then
+        LockSmithDB.thankYouMessage = defaultSettings.thankYouMessage
+    end
+    if LockSmithDB.thankYouWhisper == nil then
+        LockSmithDB.thankYouWhisper = defaultSettings.thankYouWhisper
+    end
+    if LockSmithDB.autoInviteWhisper == nil then
+        LockSmithDB.autoInviteWhisper = defaultSettings.autoInviteWhisper
+    end
+
+    if type(LockSmithDB.stats) ~= "table" then
+        LockSmithDB.stats = {}
+    end
+    if type(LockSmithDB.stats.totalGold) ~= "number" then
+        LockSmithDB.stats.totalGold = 0
+    end
+    if type(LockSmithDB.stats.totalJobs) ~= "number" then
+        LockSmithDB.stats.totalJobs = 0
+    end
+    if type(LockSmithDB.stats.lastSessionGold) ~= "number" then
+        LockSmithDB.stats.lastSessionGold = 0
+    end
+    if type(LockSmithDB.stats.totalBoxes) ~= "number" then
+        LockSmithDB.stats.totalBoxes = 0
+    end
+    if type(LockSmithDB.stats.boxesOpened) ~= "table" then
+        LockSmithDB.stats.boxesOpened = {}
+    end
+
+    if type(LockSmithDB.adChannels) ~= "table" then
+        LockSmithDB.adChannels = {}
+    end
+    if LockSmithDB.adChannels.trade == nil then
+        LockSmithDB.adChannels.trade = defaultSettings.adChannels.trade
+    end
+    if LockSmithDB.adChannels.general == nil then
+        LockSmithDB.adChannels.general = defaultSettings.adChannels.general
+    end
+    if LockSmithDB.adChannels.lfg == nil then
+        LockSmithDB.adChannels.lfg = defaultSettings.adChannels.lfg
+    end
+    if LockSmithDB.adChannels.yell == nil then
+        LockSmithDB.adChannels.yell = defaultSettings.adChannels.yell
     end
 end
 
@@ -142,7 +202,7 @@ eventFrame:RegisterEvent("PLAYER_LOGIN")
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
-        local loadedAddon = arg1
+        local loadedAddon = ...
         if loadedAddon == addonName then
             InitializeSavedVariables()
             print("|cff00ff00LockSmith|r v" .. addonVersion .. " loaded! Type /locksmith for options")

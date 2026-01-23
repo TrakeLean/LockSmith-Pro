@@ -7,6 +7,75 @@ LockSmith.Statistics = {}
 local sessionStartTime = 0
 local sessionGold = 0
 local pendingTradePartner = nil
+local tradeCompleted = false
+local lastJobTimeByPartner = {}
+local JOB_WINDOW_SECONDS = 600
+
+local function NormalizePartnerName(name)
+    if type(name) ~= "string" then
+        return ""
+    end
+
+    local base = name
+    local dash = string.find(base, "-", 1, true)
+    if dash then
+        base = string.sub(base, 1, dash - 1)
+    end
+
+    return string.lower(base)
+end
+
+local function ShouldCountJob(partner)
+    local key = NormalizePartnerName(partner)
+    if key == "" then
+        return true
+    end
+
+    local now = GetTime()
+    local last = lastJobTimeByPartner[key]
+    if not last or (now - last) > JOB_WINDOW_SECONDS then
+        lastJobTimeByPartner[key] = now
+        return true
+    end
+
+    return false
+end
+
+local function EnsureBoxStats()
+    if not LockSmithDB or not LockSmithDB.stats then return end
+
+    if type(LockSmithDB.stats.boxesOpened) ~= "table" then
+        LockSmithDB.stats.boxesOpened = {}
+    end
+    if type(LockSmithDB.stats.totalBoxes) ~= "number" then
+        LockSmithDB.stats.totalBoxes = 0
+    end
+end
+
+local function CountTradeBoxes()
+    local counts = {}
+    local total = 0
+
+    for slot = 1, 6 do
+        local itemLink = GetTradePlayerItemLink(slot)
+        if itemLink then
+            local itemName, _, itemCount = GetTradePlayerItemInfo(slot)
+            local boxData = LockSmith.GetBoxDataFromItemLink and LockSmith:GetBoxDataFromItemLink(itemLink, itemName)
+            if boxData then
+                local count = itemCount or 1
+                total = total + count
+                local key = boxData.key or boxData.name
+                counts[key] = (counts[key] or 0) + count
+            end
+        end
+    end
+
+    if total == 0 then
+        return 0, nil
+    end
+
+    return total, counts
+end
 
 -- Initialize session
 function LockSmith.Statistics:InitSession()
@@ -20,12 +89,44 @@ function LockSmith.Statistics:GetSessionGold()
 end
 
 -- Track gold received
-function LockSmith.Statistics:TrackGoldReceived(amount, source)
-    sessionGold = sessionGold + amount
-    LockSmithDB.stats.totalGold = LockSmithDB.stats.totalGold + amount
-    LockSmithDB.stats.totalJobs = LockSmithDB.stats.totalJobs + 1
+function LockSmith.Statistics:TrackGoldReceived(amount, source, boxCounts)
+    local goldReceived = amount or 0
+    local totalBoxes = 0
 
-    print("|cff00ff00LockSmith:|r Received " .. LockSmith.Utils:FormatGold(amount) .. " from " .. (source or "Unknown"))
+    if boxCounts then
+        for _, count in pairs(boxCounts) do
+            totalBoxes = totalBoxes + count
+        end
+    end
+
+    if goldReceived <= 0 and totalBoxes <= 0 then
+        return
+    end
+
+    if ShouldCountJob(source) then
+        LockSmithDB.stats.totalJobs = LockSmithDB.stats.totalJobs + 1
+    end
+
+    if goldReceived > 0 then
+        sessionGold = sessionGold + goldReceived
+        LockSmithDB.stats.totalGold = LockSmithDB.stats.totalGold + goldReceived
+    end
+
+    if totalBoxes > 0 then
+        EnsureBoxStats()
+        LockSmithDB.stats.totalBoxes = LockSmithDB.stats.totalBoxes + totalBoxes
+        for key, count in pairs(boxCounts) do
+            LockSmithDB.stats.boxesOpened[key] = (LockSmithDB.stats.boxesOpened[key] or 0) + count
+        end
+    end
+
+    if goldReceived > 0 then
+        local boxNote = ""
+        if totalBoxes > 0 then
+            boxNote = " (" .. totalBoxes .. " box" .. (totalBoxes ~= 1 and "es" or "") .. ")"
+        end
+        print("|cff00ff00LockSmith:|r Received " .. LockSmith.Utils:FormatGold(goldReceived) .. " from " .. (source or "Unknown") .. boxNote)
+    end
 end
 
 -- Get average tip
@@ -41,7 +142,10 @@ function LockSmith.Statistics:ResetStats()
     LockSmithDB.stats.totalGold = 0
     LockSmithDB.stats.totalJobs = 0
     LockSmithDB.stats.lastSessionGold = 0
+    LockSmithDB.stats.totalBoxes = 0
+    LockSmithDB.stats.boxesOpened = {}
     sessionGold = 0
+    lastJobTimeByPartner = {}
 end
 
 -- Save session stats
@@ -56,22 +160,32 @@ end
 local tradeFrame = CreateFrame("Frame")
 tradeFrame:RegisterEvent("TRADE_SHOW")
 tradeFrame:RegisterEvent("TRADE_ACCEPT_UPDATE")
+tradeFrame:RegisterEvent("TRADE_CLOSED")
 
-tradeFrame:SetScript("OnEvent", function(self, event)
+tradeFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "TRADE_SHOW" then
-        pendingTradePartner = UnitName("NPC")
+        pendingTradePartner = UnitName("NPC") or UnitName("target")
+        tradeCompleted = false
 
     elseif event == "TRADE_ACCEPT_UPDATE" then
-        local playerAccepted = arg1
-        local targetAccepted = arg2
+        local playerAccepted, targetAccepted = ...
 
-        if playerAccepted == 1 and targetAccepted == 1 then
+        if playerAccepted == 1 and targetAccepted == 1 and not tradeCompleted then
             -- Both accepted - trade will complete
-            local goldReceived = GetTargetTradeMoney()
-            if goldReceived > 0 and LockSmith:IsRunning() then
-                LockSmith.Statistics:TrackGoldReceived(goldReceived, pendingTradePartner)
+            local goldReceived = GetTargetTradeMoney() or 0
+            local totalBoxes, boxCounts = CountTradeBoxes()
+
+            if LockSmith:IsRunning() and (goldReceived > 0 or totalBoxes > 0) then
+                LockSmith.Statistics:TrackGoldReceived(goldReceived, pendingTradePartner, boxCounts)
+                if goldReceived > 0 and LockSmith.AutoResponse then
+                    LockSmith.AutoResponse:SendThankYouWhisper(pendingTradePartner, goldReceived)
+                end
             end
+            tradeCompleted = true
         end
+    elseif event == "TRADE_CLOSED" then
+        pendingTradePartner = nil
+        tradeCompleted = false
     end
 end)
 

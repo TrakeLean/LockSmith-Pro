@@ -4,10 +4,60 @@
 LockSmith = LockSmith or {}
 LockSmith.UI = LockSmith.UI or {}
 
+local settingsCategory = nil
+local settingsPanel = nil
+local adMsgBox = nil
+local lowSkillBox = nil
+local thanksBox = nil
+
+local function GetDefaultMessage(key)
+    local defaults = LockSmith.DefaultSettings
+    if defaults and type(defaults[key]) == "string" then
+        return defaults[key]
+    end
+    return ""
+end
+
+local function RefreshMessageFields()
+    if not LockSmithDB then return end
+
+    if adMsgBox then
+        local msg = LockSmithDB.adMessage
+        if type(msg) ~= "string" or msg == "" then
+            msg = GetDefaultMessage("adMessage")
+        end
+        adMsgBox:SetText(msg)
+        adMsgBox:SetCursorPosition(0)
+        adMsgBox:HighlightText(0, 0)
+    end
+
+    if lowSkillBox then
+        local msg = LockSmithDB.lowSkillMessage
+        if type(msg) ~= "string" or msg == "" then
+            msg = GetDefaultMessage("lowSkillMessage")
+        end
+        lowSkillBox:SetText(msg)
+        lowSkillBox:SetCursorPosition(0)
+        lowSkillBox:HighlightText(0, 0)
+    end
+
+    if thanksBox then
+        local msg = LockSmithDB.thankYouMessage
+        if type(msg) ~= "string" or msg == "" then
+            msg = GetDefaultMessage("thankYouMessage")
+        end
+        thanksBox:SetText(msg)
+        thanksBox:SetCursorPosition(0)
+        thanksBox:HighlightText(0, 0)
+    end
+end
+
 local function CreateSettingsPanel()
     -- Main settings frame
     local panel = CreateFrame("Frame", "LockSmithSettingsPanel", UIParent)
     panel.name = "LockSmith"
+    settingsPanel = panel
+    panel:SetScript("OnShow", RefreshMessageFields)
 
     -- Scroll frame for settings
     local scrollFrame = CreateFrame("ScrollFrame", "LockSmithScrollFrame", panel, "UIPanelScrollFrameTemplate")
@@ -144,7 +194,7 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Ad message editbox
-    local adMsgBox = CreateFrame("EditBox", "LockSmithAdMsgBox", scrollChild, "InputBoxTemplate")
+    adMsgBox = CreateFrame("EditBox", "LockSmithAdMsgBox", scrollChild, "InputBoxTemplate")
     adMsgBox:SetPoint("TOPLEFT", 16, yOffset)
     adMsgBox:SetSize(450, 30)
     adMsgBox:SetText(LockSmithDB.adMessage)
@@ -155,7 +205,26 @@ local function CreateSettingsPanel()
     adMsgBox:SetScript("OnEscapePressed", function(self)
         self:ClearFocus()
     end)
-    yOffset = yOffset - 40
+    yOffset = yOffset - 35
+
+    -- Set default ad message
+    local adDefaultBtn = CreateFrame("Button", "LockSmithAdDefaultBtn", scrollChild, "GameMenuButtonTemplate")
+    adDefaultBtn:SetPoint("TOPLEFT", 16, yOffset)
+    adDefaultBtn:SetSize(120, 25)
+    adDefaultBtn:SetText("Set Default")
+    adDefaultBtn:SetScript("OnClick", function()
+        if not LockSmithDB then return end
+
+        local defaultMsg = LockSmith.DefaultSettings and LockSmith.DefaultSettings.adMessage
+        if type(defaultMsg) ~= "string" or defaultMsg == "" then
+            return
+        end
+
+        LockSmithDB.adMessage = defaultMsg
+        adMsgBox:SetText(defaultMsg)
+        adMsgBox:ClearFocus()
+    end)
+    yOffset = yOffset - 35
 
     -- Manual send button
     local sendAdBtn = CreateFrame("Button", "LockSmithSendAdBtn", scrollChild, "GameMenuButtonTemplate")
@@ -200,6 +269,16 @@ local function CreateSettingsPanel()
     adLFGCheck:SetChecked(LockSmithDB.adChannels.lfg)
     adLFGCheck:SetScript("OnClick", function(self)
         LockSmithDB.adChannels.lfg = self:GetChecked()
+    end)
+    yOffset = yOffset - 25
+
+    -- Yell ad channel checkbox
+    local adYellCheck = CreateFrame("CheckButton", "LockSmithAdYellCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    adYellCheck:SetPoint("TOPLEFT", 16, yOffset)
+    _G[adYellCheck:GetName() .. "Text"]:SetText("Yell")
+    adYellCheck:SetChecked(LockSmithDB.adChannels.yell)
+    adYellCheck:SetScript("OnClick", function(self)
+        LockSmithDB.adChannels.yell = self:GetChecked()
     end)
     yOffset = yOffset - 35
 
@@ -246,6 +325,16 @@ local function CreateSettingsPanel()
     responseHeader:SetText("|cff00ff00Auto-Response Settings|r")
     yOffset = yOffset - 20
 
+    -- Auto-invite on whisper
+    local autoInviteCheck = CreateFrame("CheckButton", "LockSmithAutoInviteCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    autoInviteCheck:SetPoint("TOPLEFT", 16, yOffset)
+    _G[autoInviteCheck:GetName() .. "Text"]:SetText("Auto-invite whisper senders")
+    autoInviteCheck:SetChecked(LockSmithDB.autoInviteWhisper)
+    autoInviteCheck:SetScript("OnClick", function(self)
+        LockSmithDB.autoInviteWhisper = self:GetChecked()
+    end)
+    yOffset = yOffset - 25
+
     -- Low skill whisper checkbox
     local lowSkillCheck = CreateFrame("CheckButton", "LockSmithLowSkillCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     lowSkillCheck:SetPoint("TOPLEFT", 16, yOffset)
@@ -263,7 +352,7 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Low skill message editbox
-    local lowSkillBox = CreateFrame("EditBox", "LockSmithLowSkillBox", scrollChild, "InputBoxTemplate")
+    lowSkillBox = CreateFrame("EditBox", "LockSmithLowSkillBox", scrollChild, "InputBoxTemplate")
     lowSkillBox:SetPoint("TOPLEFT", 16, yOffset)
     lowSkillBox:SetSize(450, 30)
     lowSkillBox:SetText(LockSmithDB.lowSkillMessage)
@@ -274,7 +363,75 @@ local function CreateSettingsPanel()
     lowSkillBox:SetScript("OnEscapePressed", function(self)
         self:ClearFocus()
     end)
-    yOffset = yOffset - 50
+    yOffset = yOffset - 35
+
+    -- Set default low skill message
+    local lowSkillDefaultBtn = CreateFrame("Button", "LockSmithLowSkillDefaultBtn", scrollChild, "GameMenuButtonTemplate")
+    lowSkillDefaultBtn:SetPoint("TOPLEFT", 16, yOffset)
+    lowSkillDefaultBtn:SetSize(120, 25)
+    lowSkillDefaultBtn:SetText("Set Default")
+    lowSkillDefaultBtn:SetScript("OnClick", function()
+        if not LockSmithDB then return end
+
+        local defaultMsg = LockSmith.DefaultSettings and LockSmith.DefaultSettings.lowSkillMessage
+        if type(defaultMsg) ~= "string" or defaultMsg == "" then
+            return
+        end
+
+        LockSmithDB.lowSkillMessage = defaultMsg
+        lowSkillBox:SetText(defaultMsg)
+        lowSkillBox:ClearFocus()
+    end)
+    yOffset = yOffset - 35
+
+    -- Thank-you whisper checkbox
+    local thankYouCheck = CreateFrame("CheckButton", "LockSmithThankYouCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    thankYouCheck:SetPoint("TOPLEFT", 16, yOffset)
+    _G[thankYouCheck:GetName() .. "Text"]:SetText("Whisper after receiving a tip")
+    thankYouCheck:SetChecked(LockSmithDB.thankYouWhisper)
+    thankYouCheck:SetScript("OnClick", function(self)
+        LockSmithDB.thankYouWhisper = self:GetChecked()
+    end)
+    yOffset = yOffset - 25
+
+    -- Thank-you message label
+    local thankYouLabel = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    thankYouLabel:SetPoint("TOPLEFT", 16, yOffset)
+    thankYouLabel:SetText("Thank-you Message (use %TIP%):")
+    yOffset = yOffset - 20
+
+    -- Thank-you message editbox
+    thanksBox = CreateFrame("EditBox", "LockSmithThankYouBox", scrollChild, "InputBoxTemplate")
+    thanksBox:SetPoint("TOPLEFT", 16, yOffset)
+    thanksBox:SetSize(450, 30)
+    thanksBox:SetText(LockSmithDB.thankYouMessage)
+    thanksBox:SetAutoFocus(false)
+    thanksBox:SetScript("OnTextChanged", function(self)
+        LockSmithDB.thankYouMessage = self:GetText()
+    end)
+    thanksBox:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+    end)
+    yOffset = yOffset - 35
+
+    -- Set default thank-you message
+    local thankYouDefaultBtn = CreateFrame("Button", "LockSmithThankYouDefaultBtn", scrollChild, "GameMenuButtonTemplate")
+    thankYouDefaultBtn:SetPoint("TOPLEFT", 16, yOffset)
+    thankYouDefaultBtn:SetSize(120, 25)
+    thankYouDefaultBtn:SetText("Set Default")
+    thankYouDefaultBtn:SetScript("OnClick", function()
+        if not LockSmithDB then return end
+
+        local defaultMsg = LockSmith.DefaultSettings and LockSmith.DefaultSettings.thankYouMessage
+        if type(defaultMsg) ~= "string" or defaultMsg == "" then
+            return
+        end
+
+        LockSmithDB.thankYouMessage = defaultMsg
+        thanksBox:SetText(defaultMsg)
+        thanksBox:ClearFocus()
+    end)
+    yOffset = yOffset - 35
 
     -- ================================
     -- Statistics Section
@@ -297,6 +454,12 @@ local function CreateSettingsPanel()
     totalJobsText:SetText("Total Jobs Completed: " .. LockSmithDB.stats.totalJobs)
     yOffset = yOffset - 20
 
+    -- Total boxes opened
+    local totalBoxesText = scrollChild:CreateFontString("LockSmithTotalBoxesText", "ARTWORK", "GameFontNormal")
+    totalBoxesText:SetPoint("TOPLEFT", 16, yOffset)
+    totalBoxesText:SetText("Total Boxes Opened: " .. (LockSmithDB.stats.totalBoxes or 0))
+    yOffset = yOffset - 20
+
     -- Average tip
     local avgTip = LockSmith.Statistics:GetAverageTip()
     local avgTipText = scrollChild:CreateFontString("LockSmithAvgTipText", "ARTWORK", "GameFontNormal")
@@ -310,6 +473,43 @@ local function CreateSettingsPanel()
     lastSessionText:SetText("Last Session: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold))
     yOffset = yOffset - 30
 
+    -- Per-box stats
+    local boxStatsHeader = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    boxStatsHeader:SetPoint("TOPLEFT", 16, yOffset)
+    boxStatsHeader:SetText("|cff00ff00Boxes Opened (by type)|r")
+    yOffset = yOffset - 18
+
+    local boxStatLines = {}
+    local boxKeys = {}
+    for key, data in pairs(LockSmith.BoxDatabase) do
+        table.insert(boxKeys, key)
+    end
+    table.sort(boxKeys, function(a, b)
+        local dataA = LockSmith.BoxDatabase[a]
+        local dataB = LockSmith.BoxDatabase[b]
+        local skillA = dataA and dataA.skill or 0
+        local skillB = dataB and dataB.skill or 0
+        if skillA ~= skillB then
+            return skillA > skillB
+        end
+        local nameA = dataA and dataA.name or a
+        local nameB = dataB and dataB.name or b
+        return nameA < nameB
+    end)
+
+    for _, key in ipairs(boxKeys) do
+        local data = LockSmith.BoxDatabase[key]
+        local line = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+        line:SetPoint("TOPLEFT", 24, yOffset)
+        local count = (LockSmithDB.stats.boxesOpened and LockSmithDB.stats.boxesOpened[key]) or 0
+        local skill = data and data.skill or 0
+        local label = (skill > 0 and (skill .. " - ") or "") .. (data and data.name or key)
+        line:SetText(label .. ": " .. count)
+        boxStatLines[key] = line
+        yOffset = yOffset - 15
+    end
+    yOffset = yOffset - 12
+
     -- Refresh stats button
     local refreshStatsBtn = CreateFrame("Button", "LockSmithRefreshStatsBtn", scrollChild, "GameMenuButtonTemplate")
     refreshStatsBtn:SetPoint("TOPLEFT", 16, yOffset)
@@ -318,10 +518,19 @@ local function CreateSettingsPanel()
     refreshStatsBtn:SetScript("OnClick", function(self)
         _G["LockSmithTotalGoldText"]:SetText("Total Gold Earned: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold))
         _G["LockSmithTotalJobsText"]:SetText("Total Jobs Completed: " .. LockSmithDB.stats.totalJobs)
+        _G["LockSmithTotalBoxesText"]:SetText("Total Boxes Opened: " .. (LockSmithDB.stats.totalBoxes or 0))
 
         local avg = LockSmith.Statistics:GetAverageTip()
         _G["LockSmithAvgTipText"]:SetText("Average Tip: " .. LockSmith.Utils:FormatGold(avg))
         _G["LockSmithLastSessionText"]:SetText("Last Session: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold))
+
+        local counts = LockSmithDB.stats.boxesOpened or {}
+        for key, line in pairs(boxStatLines) do
+            local data = LockSmith.BoxDatabase[key]
+            local skill = data and data.skill or 0
+            local label = (skill > 0 and (skill .. " - ") or "") .. (data and data.name or key)
+            line:SetText(label .. ": " .. (counts[key] or 0))
+        end
     end)
     yOffset = yOffset - 40
 
@@ -335,14 +544,30 @@ local function CreateSettingsPanel()
 
         _G["LockSmithTotalGoldText"]:SetText("Total Gold Earned: 0c")
         _G["LockSmithTotalJobsText"]:SetText("Total Jobs Completed: 0")
+        _G["LockSmithTotalBoxesText"]:SetText("Total Boxes Opened: 0")
         _G["LockSmithAvgTipText"]:SetText("Average Tip: 0c")
         _G["LockSmithLastSessionText"]:SetText("Last Session: 0c")
+
+        for key, line in pairs(boxStatLines) do
+            local data = LockSmith.BoxDatabase[key]
+            local name = data and data.name or key
+            line:SetText(name .. ": 0")
+        end
 
         print("|cff00ff00LockSmith:|r Statistics reset!")
     end)
 
-    -- Register with interface options
-    InterfaceOptions_AddCategory(panel)
+    -- Register with interface options (compat for old/new APIs)
+    if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then
+        if not settingsCategory then
+            settingsCategory = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
+            Settings.RegisterAddOnCategory(settingsCategory)
+        end
+    elseif InterfaceOptions_AddCategory then
+        InterfaceOptions_AddCategory(panel)
+    end
+
+    RefreshMessageFields()
 
     return panel
 end
@@ -354,7 +579,13 @@ function LockSmith.UI:OpenSettingsGUI()
         CreateSettingsPanel()
     end
 
-    -- Open interface options to our panel (call twice due to Blizzard bug)
-    InterfaceOptionsFrame_OpenToCategory("LockSmith")
-    InterfaceOptionsFrame_OpenToCategory("LockSmith")
+    RefreshMessageFields()
+
+    -- Open interface options to our panel (call twice due to Blizzard bug on legacy UI)
+    if Settings and Settings.OpenToCategory and settingsCategory then
+        Settings.OpenToCategory(settingsCategory)
+    elseif InterfaceOptionsFrame_OpenToCategory then
+        InterfaceOptionsFrame_OpenToCategory(settingsPanel or "LockSmith")
+        InterfaceOptionsFrame_OpenToCategory(settingsPanel or "LockSmith")
+    end
 end

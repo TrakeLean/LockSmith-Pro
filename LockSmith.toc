@@ -1,4 +1,4 @@
-## Interface: 11505
+## Interface: 20505, 11505, 120001, 110207, 120000
 ## Title: LockSmith
 ## Notes: Automated lockpicking service addon for Rogues. Monitors chat for lockpick requests, manages invites, and tracks tips.
 ## Author: Your Name

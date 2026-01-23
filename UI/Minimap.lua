@@ -45,7 +45,7 @@ local function CreateMinimapButton()
         GameTooltip:SetText("|cff00ff00LockSmith|r", 1, 1, 1)
 
         if LockSmith:IsRunning() then
-            local skill, maxSkill = LockSmith:GetLockpickingSkill()
+            local skill, maxSkill = LockSmith.Skills:GetLockpickingSkill()
             GameTooltip:AddLine("|cff00ff00Status: Running|r", 1, 1, 1)
             GameTooltip:AddLine("Lockpicking: " .. skill .. "/" .. maxSkill, 1, 1, 1)
         else
@@ -69,10 +69,10 @@ local function CreateMinimapButton()
     button:SetScript("OnClick", function(self, buttonPressed)
         if IsShiftKeyDown() then
             -- Shift+Click: Send advertisement
-            LockSmith:SendAdvertisement()
+            LockSmith.Advertisement:SendAdvertisement()
         elseif buttonPressed == "LeftButton" then
             -- Left-click: Open settings
-            LockSmith:OpenSettingsGUI()
+            LockSmith.UI:OpenSettingsGUI()
         elseif buttonPressed == "RightButton" then
             -- Right-click: Toggle start/stop
             LockSmith:Toggle()

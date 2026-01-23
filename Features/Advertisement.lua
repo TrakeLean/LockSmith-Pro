@@ -5,6 +5,7 @@ LockSmith = LockSmith or {}
 LockSmith.Advertisement = {}
 
 local adTimer = nil
+LockSmith.Advertisement.adReady = false
 
 -- Send advertisement to configured channels
 function LockSmith.Advertisement:SendAdvertisement()
@@ -41,10 +42,38 @@ function LockSmith.Advertisement:SendAdvertisement()
         end
     end
 
+    -- Send to Yell
+    if LockSmithDB.adChannels.yell then
+        SendChatMessage(message, "YELL")
+        sentCount = sentCount + 1
+    end
+
     if sentCount > 0 then
         print("|cff00ff00LockSmith:|r Advertisement sent to " .. sentCount .. " channel(s)")
     else
         print("|cffff0000LockSmith:|r No channels available for advertisement")
+    end
+
+    self:ClearAdReady()
+end
+
+function LockSmith.Advertisement:NotifyAdReady()
+    if self.adReady then return end
+
+    self.adReady = true
+    print("|cff00ff00LockSmith:|r Advertisement ready. Click the popup or minimap to send.")
+
+    if LockSmith.UI and LockSmith.UI.ShowAdReadyPopup then
+        LockSmith.UI:ShowAdReadyPopup()
+    end
+end
+
+function LockSmith.Advertisement:ClearAdReady()
+    if not self.adReady then return end
+
+    self.adReady = false
+    if LockSmith.UI and LockSmith.UI.HideAdReadyPopup then
+        LockSmith.UI:HideAdReadyPopup()
     end
 end
 
@@ -59,7 +88,7 @@ function LockSmith.Advertisement:StartAdTimer()
     -- Create repeating timer
     adTimer = LockSmith.Utils:ScheduleRepeatingTimer(function()
         if LockSmith:IsRunning() and LockSmithDB.adTimerEnabled then
-            LockSmith.Advertisement:SendAdvertisement()
+            LockSmith.Advertisement:NotifyAdReady()
         end
     end, interval)
 
@@ -72,6 +101,8 @@ function LockSmith.Advertisement:StopAdTimer()
         LockSmith.Utils:CancelTimer(adTimer)
         adTimer = nil
     end
+
+    self:ClearAdReady()
 end
 
 -- Restart timer with new interval

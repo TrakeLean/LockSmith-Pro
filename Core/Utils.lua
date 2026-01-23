@@ -108,3 +108,27 @@ function LockSmith.Utils:SendToChannel(message, channelName)
     end
     return false
 end
+
+-- Invite helper with API fallbacks
+function LockSmith.Utils:InvitePlayer(target)
+    if not target or target == "" then
+        return false
+    end
+
+    if C_PartyInfo and C_PartyInfo.InviteUnit then
+        C_PartyInfo.InviteUnit(target)
+        return true
+    end
+
+    if InviteUnit then
+        InviteUnit(target)
+        return true
+    end
+
+    if InviteByName then
+        InviteByName(target)
+        return true
+    end
+
+    return false
+end
