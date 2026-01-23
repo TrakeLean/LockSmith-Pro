@@ -207,6 +207,14 @@ local function CreateSettingsPanel()
     end)
     yOffset = yOffset - 35
 
+    -- Icon helper text for ad message
+    local adIconHelp = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    adIconHelp:SetPoint("TOPLEFT", 16, yOffset)
+    adIconHelp:SetWidth(450)
+    adIconHelp:SetJustifyH("LEFT")
+    adIconHelp:SetText("|cff888888Available icons: {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8} {skull} {circle} {diamond} {triangle} {moon} {square} {cross} {star} ♥|r")
+    yOffset = yOffset - 25
+
     -- Set default ad message
     local adDefaultBtn = CreateFrame("Button", "LockSmithAdDefaultBtn", scrollChild, "GameMenuButtonTemplate")
     adDefaultBtn:SetPoint("TOPLEFT", 16, yOffset)
@@ -403,6 +411,14 @@ local function CreateSettingsPanel()
         self:ClearFocus()
     end)
     yOffset = yOffset - 35
+
+    -- Icon helper text for thank-you message
+    local thankYouIconHelp = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    thankYouIconHelp:SetPoint("TOPLEFT", 16, yOffset)
+    thankYouIconHelp:SetWidth(450)
+    thankYouIconHelp:SetJustifyH("LEFT")
+    thankYouIconHelp:SetText("|cff888888Available icons: {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8} {skull} {circle} {diamond} {triangle} {moon} {square} {cross} {star} ♥|r")
+    yOffset = yOffset - 25
 
     -- Set default thank-you message
     local thankYouDefaultBtn = CreateFrame("Button", "LockSmithThankYouDefaultBtn", scrollChild, "GameMenuButtonTemplate")

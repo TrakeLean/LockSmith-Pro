@@ -7,22 +7,25 @@ An automated lockpicking service addon for World of Warcraft Classic/Anniversary
 ### Core Functionality
 - **Automatic Chat Monitoring** - Watches Trade, General, LFG, and Whisper channels for lockpick requests
 - **Smart Box Detection** - Identifies specific junkbox/lockbox types and skill requirements
+- **Expansion Detection** - Automatically detects your WoW version (Classic/TBC/Wrath/Retail) and shows only relevant boxes
 - **Skill Checking** - Only notifies you of requests you can actually fulfill based on your current lockpicking skill
-- **Notification Popups** - Shows player name, message, box type, required skill with Invite/Whisper/Ignore buttons
+- **Notification Popups** - Shows player name, message, box type, required skill with action buttons
+- **Session Ignore List** - Temporarily ignore spammy players for the current session (resets when addon stops)
 - **Sound Alerts** - Plays a sound when a valid request is detected
-- **Optional Auto-Invite** - Can invite whisper senders automatically (throttled; skips current group members)
 
 ### Advertisement System
-- **Customizable Messages** - Edit your advertisement text
+- **Customizable Messages** - Edit your advertisement text with support for raid icons ({skull}, {rt1}, etc.) and special characters (♥)
+- **Icon Helper** - Built-in reference showing all available icons you can use in messages
 - **Multi-Channel Broadcasting** - Send ads to Trade, General, LFG, and/or Yell channels
 - **Manual Send** - Click a button to broadcast your ad
-- **Ad Timer** - Shows an "Ad Ready" popup at configurable intervals (30s - 10 minutes); click Send to post
+- **Ad Timer** - Shows an "Ad Ready" popup at configurable intervals (30s - 10 minutes) with Send/Stop/Dismiss buttons
 
 ### Auto-Response
 - **Low Skill Whispers** - Automatically whisper players when your skill is too low (toggleable)
-- **Thank-You Whispers** - Optionally whisper after receiving a trade tip
-- **Customizable Messages** - Edit low-skill and thank-you responses
+- **Thank-You Whispers** - Optionally whisper after receiving a trade tip (2-second delay for natural timing)
+- **Customizable Messages** - Edit low-skill and thank-you responses with icon support
 - **Variable Support** - Use %CURRENT%, %REQUIRED%, and %TIP% placeholders
+- **Icon Helper** - Shows available icons below message fields
 
 ### Tip Tracking
 - **Automatic Gold Detection** - Tracks gold received from trade windows
@@ -92,9 +95,9 @@ Access via `/locksmith` or through Interface Options -> AddOns -> LockSmith
 **Auto-Response Settings**
 - Toggle low-skill whispers on/off
 - Toggle thank-you whispers after a tip
-- Toggle auto-invite for whisper senders
 - Customize low-skill and thank-you messages
 - Use %CURRENT%, %REQUIRED%, and %TIP% as placeholders
+- Icon reference helper shows available raid icons and symbols
 
 **Statistics**
 - Total gold earned
@@ -111,16 +114,21 @@ Access via `/locksmith` or through Interface Options -> AddOns -> LockSmith
 - **Battered Junkbox** (1 skill)
 - **Worn Junkbox** (100 skill)
 - **Sturdy Junkbox** (175 skill)
-- **Heavy Junkbox** (250 skill)
+- **Heavy Junkbox** (250 skill) - Classic
+- **Strong Junkbox** (300 skill) - TBC
 
 ### Lockboxes
 - **Strong Iron Lockbox** (125 skill)
 - **Steel Lockbox** (175 skill)
 - **Reinforced Steel Lockbox** (225 skill)
 - **Mithril Lockbox** (225 skill)
-- **Thorium Lockbox** (225 skill)
-- **Ironbound Locked Chest** (175 skill)
-- **Reinforced Locked Chest** (250 skill)
+- **Thorium Lockbox** (225 skill) - Classic
+- **Eternium Lockbox** (225 skill) - Classic
+- **Khorium Lockbox** (325 skill) - TBC
+- **Ironbound Locked Chest** (175 skill) - Classic
+- **Reinforced Locked Chest** (250 skill) - Classic
+
+*Note: The addon automatically detects your WoW version and shows only relevant boxes for that expansion.*
 
 ## How It Works
 
@@ -153,8 +161,16 @@ Sorry, my lockpicking skill (%CURRENT%) is too low for that box (requires %REQUI
 
 **Thank-You Response:**
 ```
-Thank you for the tip! (%TIP%)
+Thank you for the %TIP% tip! ♥
 ```
+
+**Available Icons:**
+You can use these in your messages to make them stand out:
+- Raid markers: `{rt1}` `{rt2}` `{rt3}` `{rt4}` `{rt5}` `{rt6}` `{rt7}` `{rt8}`
+- Named icons: `{skull}` `{circle}` `{diamond}` `{triangle}` `{moon}` `{square}` `{cross}` `{star}`
+- Special: `♥` (heart)
+
+Example: `{skull} Locksmith - Fast service - Tips welcome! {skull}`
 
 All messages are fully customizable in the settings panel!
 

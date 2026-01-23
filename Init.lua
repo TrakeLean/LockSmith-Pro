@@ -34,7 +34,7 @@ local defaultSettings = {
     lowSkillWhisper = true,
     lowSkillMessage = "Sorry, my lockpicking skill (%CURRENT%) is too low for that box (requires %REQUIRED%)",
     thankYouWhisper = true,
-    thankYouMessage = "Thank you for the tip! (%TIP%)",
+    thankYouMessage = "Thank you for the %TIP% tip! ♥",
 
     -- Statistics
     stats = {
