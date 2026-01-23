@@ -9,6 +9,7 @@ local settingsPanel = nil
 local adMsgBox = nil
 local lowSkillBox = nil
 local thanksBox = nil
+local boxStatLines = {}
 
 local function GetDefaultMessage(key)
     local defaults = LockSmith.DefaultSettings
@@ -49,6 +50,39 @@ local function RefreshMessageFields()
         thanksBox:SetText(msg)
         thanksBox:SetCursorPosition(0)
         thanksBox:HighlightText(0, 0)
+    end
+end
+
+local function RefreshStats()
+    if not LockSmithDB or not LockSmithDB.stats then return end
+
+    -- Update main stat text elements
+    if _G["LockSmithTotalGoldText"] then
+        _G["LockSmithTotalGoldText"]:SetText("Total Gold Earned: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold))
+    end
+    if _G["LockSmithTotalJobsText"] then
+        _G["LockSmithTotalJobsText"]:SetText("Total Jobs Completed: " .. LockSmithDB.stats.totalJobs)
+    end
+    if _G["LockSmithTotalBoxesText"] then
+        _G["LockSmithTotalBoxesText"]:SetText("Total Boxes Opened: " .. (LockSmithDB.stats.totalBoxes or 0))
+    end
+    if _G["LockSmithAvgTipText"] then
+        local avg = LockSmith.Statistics:GetAverageTip()
+        _G["LockSmithAvgTipText"]:SetText("Average Tip: " .. LockSmith.Utils:FormatGold(avg))
+    end
+    if _G["LockSmithLastSessionText"] then
+        _G["LockSmithLastSessionText"]:SetText("Last Session: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold))
+    end
+
+    -- Update per-box stats (using boxStatLines from closure)
+    local counts = LockSmithDB.stats.boxesOpened or {}
+    if boxStatLines then
+        for key, line in pairs(boxStatLines) do
+            local data = LockSmith.BoxDatabase[key]
+            local skill = data and data.skill or 0
+            local label = (skill > 0 and (skill .. " - ") or "") .. (data and data.name or key)
+            line:SetText(label .. ": " .. (counts[key] or 0))
+        end
     end
 end
 
@@ -175,6 +209,16 @@ local function CreateSettingsPanel()
     whisperCheckbox:SetChecked(LockSmithDB.monitorWhisper)
     whisperCheckbox:SetScript("OnClick", function(self)
         LockSmithDB.monitorWhisper = self:GetChecked()
+    end)
+    yOffset = yOffset - 25
+
+    -- Sound effects checkbox
+    local soundCheckbox = CreateFrame("CheckButton", "LockSmithSoundCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    soundCheckbox:SetPoint("TOPLEFT", 16, yOffset)
+    _G[soundCheckbox:GetName() .. "Text"]:SetText("Play Sound Effects")
+    soundCheckbox:SetChecked(LockSmithDB.playSoundEffects)
+    soundCheckbox:SetScript("OnClick", function(self)
+        LockSmithDB.playSoundEffects = self:GetChecked()
     end)
     yOffset = yOffset - 35
 
@@ -333,6 +377,26 @@ local function CreateSettingsPanel()
     responseHeader:SetText("|cff00ff00Auto-Response Settings|r")
     yOffset = yOffset - 20
 
+    -- Auto-invite on whisper
+    local autoInviteCheck = CreateFrame("CheckButton", "LockSmithAutoInviteCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    autoInviteCheck:SetPoint("TOPLEFT", 16, yOffset)
+    _G[autoInviteCheck:GetName() .. "Text"]:SetText("Auto-invite whisper senders")
+    autoInviteCheck:SetChecked(LockSmithDB.autoInviteWhisper)
+    autoInviteCheck:SetScript("OnClick", function(self)
+        LockSmithDB.autoInviteWhisper = self:GetChecked()
+    end)
+    yOffset = yOffset - 25
+
+    -- Popup on any whisper
+    local popupWhisperCheck = CreateFrame("CheckButton", "LockSmithPopupWhisperCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    popupWhisperCheck:SetPoint("TOPLEFT", 16, yOffset)
+    _G[popupWhisperCheck:GetName() .. "Text"]:SetText("Popup on any whisper (even without keywords)")
+    popupWhisperCheck:SetChecked(LockSmithDB.popupOnAnyWhisper)
+    popupWhisperCheck:SetScript("OnClick", function(self)
+        LockSmithDB.popupOnAnyWhisper = self:GetChecked()
+    end)
+    yOffset = yOffset - 25
+
     -- Low skill whisper checkbox
     local lowSkillCheck = CreateFrame("CheckButton", "LockSmithLowSkillCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     lowSkillCheck:SetPoint("TOPLEFT", 16, yOffset)
@@ -485,7 +549,7 @@ local function CreateSettingsPanel()
     boxStatsHeader:SetText("|cff00ff00Boxes Opened (by type)|r")
     yOffset = yOffset - 18
 
-    local boxStatLines = {}
+    boxStatLines = {}  -- Reset the module-level table
     local boxKeys = {}
     for key, data in pairs(LockSmith.BoxDatabase) do
         table.insert(boxKeys, key)
@@ -515,30 +579,6 @@ local function CreateSettingsPanel()
         yOffset = yOffset - 15
     end
     yOffset = yOffset - 12
-
-    -- Refresh stats button
-    local refreshStatsBtn = CreateFrame("Button", "LockSmithRefreshStatsBtn", scrollChild, "GameMenuButtonTemplate")
-    refreshStatsBtn:SetPoint("TOPLEFT", 16, yOffset)
-    refreshStatsBtn:SetSize(120, 25)
-    refreshStatsBtn:SetText("Refresh Stats")
-    refreshStatsBtn:SetScript("OnClick", function(self)
-        _G["LockSmithTotalGoldText"]:SetText("Total Gold Earned: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold))
-        _G["LockSmithTotalJobsText"]:SetText("Total Jobs Completed: " .. LockSmithDB.stats.totalJobs)
-        _G["LockSmithTotalBoxesText"]:SetText("Total Boxes Opened: " .. (LockSmithDB.stats.totalBoxes or 0))
-
-        local avg = LockSmith.Statistics:GetAverageTip()
-        _G["LockSmithAvgTipText"]:SetText("Average Tip: " .. LockSmith.Utils:FormatGold(avg))
-        _G["LockSmithLastSessionText"]:SetText("Last Session: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold))
-
-        local counts = LockSmithDB.stats.boxesOpened or {}
-        for key, line in pairs(boxStatLines) do
-            local data = LockSmith.BoxDatabase[key]
-            local skill = data and data.skill or 0
-            local label = (skill > 0 and (skill .. " - ") or "") .. (data and data.name or key)
-            line:SetText(label .. ": " .. (counts[key] or 0))
-        end
-    end)
-    yOffset = yOffset - 40
 
     -- Reset stats button
     local resetStatsBtn = CreateFrame("Button", "LockSmithResetStatsBtn", scrollChild, "GameMenuButtonTemplate")
@@ -586,6 +626,7 @@ function LockSmith.UI:OpenSettingsGUI()
     end
 
     RefreshMessageFields()
+    RefreshStats()  -- Auto-refresh statistics when panel opens
 
     -- Open interface options to our panel (call twice due to Blizzard bug on legacy UI)
     if Settings and Settings.OpenToCategory and settingsCategory then

@@ -51,6 +51,11 @@ local function HideDialogButtons(frame)
 end
 
 local function PlayNotificationSound()
+    -- Check if sound effects are enabled
+    if not LockSmithDB or not LockSmithDB.playSoundEffects then
+        return
+    end
+
     if SOUNDKIT and SOUNDKIT.TELL_MESSAGE then
         PlaySound(SOUNDKIT.TELL_MESSAGE, "Master")
         return

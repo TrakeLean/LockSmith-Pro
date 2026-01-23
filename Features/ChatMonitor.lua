@@ -5,6 +5,8 @@ LockSmith = LockSmith or {}
 LockSmith.ChatMonitor = {}
 
 local sessionIgnoreList = {}
+local lastInviteTime = {}
+local INVITE_THROTTLE = 30
 
 local function NormalizeSenderName(name)
     if type(name) ~= "string" then
@@ -18,6 +20,47 @@ local function NormalizeSenderName(name)
     end
 
     return string.lower(base)
+end
+
+local function CanInvite(sender)
+    local now = GetTime()
+    local last = lastInviteTime[sender]
+    if not last or (now - last) > INVITE_THROTTLE then
+        lastInviteTime[sender] = now
+        return true
+    end
+    return false
+end
+
+local function IsGroupMember(name)
+    local target = NormalizeSenderName(name)
+    if target == "" then
+        return false
+    end
+
+    -- Check if player is in a raid
+    local inRaid = UnitInRaid("player")
+    if inRaid then
+        -- Use GetNumGroupMembers for newer clients, GetNumRaidMembers for classic
+        local count = GetNumGroupMembers and GetNumGroupMembers() or (GetNumRaidMembers and GetNumRaidMembers() or 0)
+        for i = 1, count do
+            local member = UnitName("raid" .. i)
+            if member and NormalizeSenderName(member) == target then
+                return true
+            end
+        end
+    else
+        -- Use GetNumSubgroupMembers for newer clients, GetNumPartyMembers for classic
+        local count = GetNumSubgroupMembers and GetNumSubgroupMembers() or (GetNumPartyMembers and GetNumPartyMembers() or 0)
+        for i = 1, count do
+            local member = UnitName("party" .. i)
+            if member and NormalizeSenderName(member) == target then
+                return true
+            end
+        end
+    end
+
+    return false
 end
 
 function LockSmith.ChatMonitor:IsSelfSender(sender)
@@ -50,7 +93,7 @@ function LockSmith.ChatMonitor:IsSessionIgnored(sender)
 end
 
 -- Process lockpick request from chat
-function LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelName, channelNumber)
+function LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelName, channelNumber, allowNonKeyword)
     if not LockSmith:IsRunning() then return end
 
     -- Don't process our own messages
@@ -60,7 +103,8 @@ function LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelNa
     if self:IsSessionIgnored(sender) then return end
 
     -- Check if message has lockpicking keywords
-    if not LockSmith:HasLockpickKeyword(message) then return end
+    local hasKeyword = LockSmith:HasLockpickKeyword(message)
+    if not hasKeyword and not allowNonKeyword then return end
 
     -- Try to identify the box type
     local boxData = LockSmith:IdentifyBoxType(message)
@@ -77,12 +121,12 @@ function LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelNa
         canHandle = currentSkill >= requiredSkill
     end
 
-    if canHandle then
-        -- Show notification popup
-        LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requiredSkill, message)
-    else
+    if hasKeyword and not canHandle then
         -- Send low skill whisper if enabled
         LockSmith.AutoResponse:HandleInsufficientSkill(sender, boxData)
+    else
+        -- Show notification popup
+        LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requiredSkill, message)
     end
 end
 
@@ -110,16 +154,23 @@ local function OnChatMessage(event, ...)
             end
         end
 
-        LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelName, channelNumber)
+        LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelName, channelNumber, false)
 
     elseif event == "CHAT_MSG_WHISPER" then
         message, sender = ...
         if type(message) ~= "string" then return end
         if LockSmith.ChatMonitor:IsSelfSender(sender) then return end
 
-        if not LockSmithDB.monitorWhisper then return end
+        if LockSmithDB.autoInviteWhisper and CanInvite(sender) and not IsGroupMember(sender) then
+            if LockSmith.Utils and LockSmith.Utils.InvitePlayer then
+                LockSmith.Utils:InvitePlayer(sender)
+            end
+        end
 
-        LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, "WHISPER", nil)
+        local allowNonKeyword = LockSmithDB.popupOnAnyWhisper
+        if not LockSmithDB.monitorWhisper and not allowNonKeyword then return end
+
+        LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, "WHISPER", nil, allowNonKeyword)
     end
 end
 

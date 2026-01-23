@@ -3,6 +3,7 @@
 ## Notes: Automated lockpicking service addon for Rogues. Monitors chat for lockpick requests, manages invites, and tracks tips.
 ## Author: Your Name
 ## Version: 1.0.0
+## IconTexture: Interface\AddOns\LockSmith\logo\logonoText.tga
 ## SavedVariables: LockSmithDB
 
 # Data
