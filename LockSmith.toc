@@ -6,22 +6,22 @@
 ## SavedVariables: LockSmithDB
 
 # Data
-Database.lua
+Data\Database.lua
 
 # Core Systems
-Utils.lua
-Skills.lua
-Statistics.lua
+Core\Utils.lua
+Core\Skills.lua
+Core\Statistics.lua
 
 # Features
-Advertisement.lua
-AutoResponse.lua
-ChatMonitor.lua
+Features\Advertisement.lua
+Features\AutoResponse.lua
+Features\ChatMonitor.lua
 
 # UI
-Notification.lua
-Settings.lua
-Minimap.lua
+UI\Notification.lua
+UI\Settings.lua
+UI\Minimap.lua
 
 # Initialization
 Init.lua
