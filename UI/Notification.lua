@@ -88,15 +88,24 @@ local function CreateAdReadyPopup()
     message:SetText("Click Send to post your ad.")
     frame.message = message
 
+    -- Send button (left)
     local sendBtn = CreateFrame("Button", "LockSmithAdReadySendBtn", frame, "GameMenuButtonTemplate")
-    sendBtn:SetSize(120, 25)
-    sendBtn:SetPoint("BOTTOMLEFT", 40, 20)
+    sendBtn:SetSize(100, 25)
+    sendBtn:SetPoint("BOTTOMLEFT", 25, 20)
     sendBtn:SetText("Send Now")
     frame.sendBtn = sendBtn
 
+    -- Stop button (middle)
+    local stopBtn = CreateFrame("Button", "LockSmithAdReadyStopBtn", frame, "GameMenuButtonTemplate")
+    stopBtn:SetSize(100, 25)
+    stopBtn:SetPoint("BOTTOM", 0, 20)
+    stopBtn:SetText("Stop")
+    frame.stopBtn = stopBtn
+
+    -- Dismiss button (right)
     local dismissBtn = CreateFrame("Button", "LockSmithAdReadyDismissBtn", frame, "GameMenuButtonTemplate")
-    dismissBtn:SetSize(120, 25)
-    dismissBtn:SetPoint("BOTTOMRIGHT", -40, 20)
+    dismissBtn:SetSize(100, 25)
+    dismissBtn:SetPoint("BOTTOMRIGHT", -25, 20)
     dismissBtn:SetText("Dismiss")
     frame.dismissBtn = dismissBtn
 
@@ -290,6 +299,11 @@ function LockSmith.UI:ShowAdReadyPopup()
 
     activeAdNotification.sendBtn:SetScript("OnClick", function()
         LockSmith.Advertisement:SendAdvertisement()
+    end)
+
+    activeAdNotification.stopBtn:SetScript("OnClick", function()
+        LockSmith:Stop()
+        activeAdNotification:Hide()
     end)
 
     activeAdNotification.dismissBtn:SetScript("OnClick", function()
