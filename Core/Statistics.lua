@@ -177,8 +177,20 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
 
             if LockSmith:IsRunning() and (goldReceived > 0 or totalBoxes > 0) then
                 LockSmith.Statistics:TrackGoldReceived(goldReceived, pendingTradePartner, boxCounts)
+
+                -- Send thank-you message after 2 second delay
                 if goldReceived > 0 and LockSmith.AutoResponse then
-                    LockSmith.AutoResponse:SendThankYouWhisper(pendingTradePartner, goldReceived)
+                    local partner = pendingTradePartner
+                    local gold = goldReceived
+                    local delayFrame = CreateFrame("Frame")
+                    local elapsed = 0
+                    delayFrame:SetScript("OnUpdate", function(self, delta)
+                        elapsed = elapsed + delta
+                        if elapsed >= 2 then
+                            LockSmith.AutoResponse:SendThankYouWhisper(partner, gold)
+                            self:SetScript("OnUpdate", nil)
+                        end
+                    end)
                 end
             end
             tradeCompleted = true

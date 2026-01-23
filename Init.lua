@@ -35,7 +35,6 @@ local defaultSettings = {
     lowSkillMessage = "Sorry, my lockpicking skill (%CURRENT%) is too low for that box (requires %REQUIRED%)",
     thankYouWhisper = true,
     thankYouMessage = "Thank you for the tip! (%TIP%)",
-    autoInviteWhisper = false,
 
     -- Statistics
     stats = {
@@ -92,9 +91,6 @@ local function InitializeSavedVariables()
     end
     if LockSmithDB.thankYouWhisper == nil then
         LockSmithDB.thankYouWhisper = defaultSettings.thankYouWhisper
-    end
-    if LockSmithDB.autoInviteWhisper == nil then
-        LockSmithDB.autoInviteWhisper = defaultSettings.autoInviteWhisper
     end
 
     if type(LockSmithDB.stats) ~= "table" then

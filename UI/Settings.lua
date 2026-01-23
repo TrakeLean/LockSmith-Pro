@@ -325,16 +325,6 @@ local function CreateSettingsPanel()
     responseHeader:SetText("|cff00ff00Auto-Response Settings|r")
     yOffset = yOffset - 20
 
-    -- Auto-invite on whisper
-    local autoInviteCheck = CreateFrame("CheckButton", "LockSmithAutoInviteCheck", scrollChild, "ChatConfigCheckButtonTemplate")
-    autoInviteCheck:SetPoint("TOPLEFT", 16, yOffset)
-    _G[autoInviteCheck:GetName() .. "Text"]:SetText("Auto-invite whisper senders")
-    autoInviteCheck:SetChecked(LockSmithDB.autoInviteWhisper)
-    autoInviteCheck:SetScript("OnClick", function(self)
-        LockSmithDB.autoInviteWhisper = self:GetChecked()
-    end)
-    yOffset = yOffset - 25
-
     -- Low skill whisper checkbox
     local lowSkillCheck = CreateFrame("CheckButton", "LockSmithLowSkillCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     lowSkillCheck:SetPoint("TOPLEFT", 16, yOffset)

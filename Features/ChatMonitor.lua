@@ -4,8 +4,6 @@
 LockSmith = LockSmith or {}
 LockSmith.ChatMonitor = {}
 
-local lastInviteTime = {}
-local INVITE_THROTTLE = 30
 local sessionIgnoreList = {}
 
 local function NormalizeSenderName(name)
@@ -31,43 +29,6 @@ function LockSmith.ChatMonitor:IsSelfSender(sender)
     local senderBase = NormalizeSenderName(sender)
     local playerBase = NormalizeSenderName(playerName)
     return senderBase ~= "" and senderBase == playerBase
-end
-
-local function CanInvite(sender)
-    local now = GetTime()
-    local last = lastInviteTime[sender]
-    if not last or (now - last) > INVITE_THROTTLE then
-        lastInviteTime[sender] = now
-        return true
-    end
-    return false
-end
-
-local function IsGroupMember(name)
-    local target = NormalizeSenderName(name)
-    if target == "" then
-        return false
-    end
-
-    if UnitInRaid("player") then
-        local count = GetNumRaidMembers()
-        for i = 1, count do
-            local member = UnitName("raid" .. i)
-            if NormalizeSenderName(member) == target then
-                return true
-            end
-        end
-    else
-        local count = GetNumPartyMembers()
-        for i = 1, count do
-            local member = UnitName("party" .. i)
-            if NormalizeSenderName(member) == target then
-                return true
-            end
-        end
-    end
-
-    return false
 end
 
 -- Session ignore list management
@@ -155,12 +116,6 @@ local function OnChatMessage(event, ...)
         message, sender = ...
         if type(message) ~= "string" then return end
         if LockSmith.ChatMonitor:IsSelfSender(sender) then return end
-
-        if LockSmithDB.autoInviteWhisper and CanInvite(sender) and not IsGroupMember(sender) then
-            if LockSmith.Utils and LockSmith.Utils.InvitePlayer then
-                LockSmith.Utils:InvitePlayer(sender)
-            end
-        end
 
         if not LockSmithDB.monitorWhisper then return end
 
