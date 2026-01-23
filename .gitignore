@@ -1,0 +1,20 @@
+# WoW Addon Development
+*.bak
+*.tmp
+*~
+
+# Saved Variables (user data)
+*.lua.bak
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
