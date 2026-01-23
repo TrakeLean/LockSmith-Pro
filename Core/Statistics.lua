@@ -56,10 +56,11 @@ local function CountTradeBoxes()
     local counts = {}
     local total = 0
 
-    for slot = 1, 6 do
-        local itemLink = GetTradePlayerItemLink(slot)
+    -- Check target's trade slots (what they're giving us)
+    for slot = 1, 7 do
+        local itemLink = GetTradeTargetItemLink(slot)
         if itemLink then
-            local itemName, _, itemCount = GetTradePlayerItemInfo(slot)
+            local itemName, _, itemCount = GetTradeTargetItemInfo(slot)
             local boxData = LockSmith.GetBoxDataFromItemLink and LockSmith:GetBoxDataFromItemLink(itemLink, itemName)
             if boxData then
                 local count = itemCount or 1
