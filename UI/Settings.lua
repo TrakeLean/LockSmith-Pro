@@ -590,8 +590,9 @@ function LockSmith.UI:OpenSettingsGUI()
     -- Open interface options to our panel (call twice due to Blizzard bug on legacy UI)
     if Settings and Settings.OpenToCategory and settingsCategory then
         Settings.OpenToCategory(settingsCategory)
-    elseif InterfaceOptionsFrame_OpenToCategory then
-        InterfaceOptionsFrame_OpenToCategory(settingsPanel or "LockSmith")
-        InterfaceOptionsFrame_OpenToCategory(settingsPanel or "LockSmith")
+    elseif InterfaceOptionsFrame_OpenToCategory and settingsPanel then
+        -- Call twice - Blizzard bug requires this to actually open to the addon
+        InterfaceOptionsFrame_OpenToCategory(settingsPanel)
+        InterfaceOptionsFrame_OpenToCategory(settingsPanel)
     end
 end
