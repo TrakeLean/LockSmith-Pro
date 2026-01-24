@@ -931,7 +931,7 @@ function LockSmith.Dashboard:InitializeSettings(content)
     adLabel:SetText("Advertisement Message:")
     yOffset = yOffset - 20
 
-    local adMsgBox = CreateFrame("EditBox", nil, scrollChild, "InputBoxTemplate")
+    local adMsgBox = CreateFrame("EditBox", "LockSmithAdMsgBox", scrollChild, "InputBoxTemplate")
     adMsgBox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
     adMsgBox:SetSize(340, 30)
     adMsgBox:SetText(LockSmithDB.adMessage or "")
@@ -972,7 +972,7 @@ function LockSmith.Dashboard:InitializeSettings(content)
     timerLabel:SetText("Timer Interval (seconds):")
     yOffset = yOffset - 20
 
-    local timerSlider = CreateFrame("Slider", nil, scrollChild, "OptionsSliderTemplate")
+    local timerSlider = CreateFrame("Slider", "LockSmithAdTimerSlider", scrollChild, "OptionsSliderTemplate")
     timerSlider:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, yOffset)
     timerSlider:SetMinMaxValues(30, 600)
     timerSlider:SetValue(LockSmithDB.adTimerInterval or 60)
@@ -999,7 +999,7 @@ function LockSmith.Dashboard:InitializeSettings(content)
     lowSkillLabel:SetText("Low Skill Message:")
     yOffset = yOffset - 20
 
-    local lowSkillBox = CreateFrame("EditBox", nil, scrollChild, "InputBoxTemplate")
+    local lowSkillBox = CreateFrame("EditBox", "LockSmithLowSkillBox", scrollChild, "InputBoxTemplate")
     lowSkillBox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
     lowSkillBox:SetSize(340, 30)
     lowSkillBox:SetText(LockSmithDB.lowSkillMessage or "")
@@ -1018,7 +1018,7 @@ function LockSmith.Dashboard:InitializeSettings(content)
     thankYouLabel:SetText("Thank-You Message:")
     yOffset = yOffset - 20
 
-    local thankYouBox = CreateFrame("EditBox", nil, scrollChild, "InputBoxTemplate")
+    local thankYouBox = CreateFrame("EditBox", "LockSmithThankYouBox", scrollChild, "InputBoxTemplate")
     thankYouBox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
     thankYouBox:SetSize(340, 30)
     thankYouBox:SetText(LockSmithDB.thankYouMessage or "")
