@@ -132,3 +132,60 @@ function LockSmith.Utils:InvitePlayer(target)
 
     return false
 end
+
+-- ================================
+-- Auto Raid Marker
+-- ================================
+
+local hasSetMarker = false
+local markerFrame = CreateFrame("Frame")
+
+-- Set raid marker on player
+local function SetPlayerRaidMarker()
+    -- SetRaidTarget: 1=Star, 2=Circle, 3=Diamond, 4=Triangle, 5=Moon, 6=Square, 7=Cross, 8=Skull
+    if SetRaidTarget then
+        SetRaidTarget("player", 1)  -- 1 = Star
+    end
+end
+
+-- Check if we should set the marker
+local function CheckAndSetMarker()
+    -- Only set marker once per group
+    if hasSetMarker then return end
+
+    -- Check if we're in a party and are the leader
+    local isLeader = UnitIsGroupLeader and UnitIsGroupLeader("player")
+    if not isLeader then
+        -- For Classic/TBC compatibility
+        isLeader = (GetNumGroupMembers and GetNumGroupMembers() > 0) or (GetNumPartyMembers and GetNumPartyMembers() > 0)
+    end
+
+    if isLeader then
+        -- Small delay to ensure group is formed
+        local delayFrame = CreateFrame("Frame")
+        local elapsed = 0
+        delayFrame:SetScript("OnUpdate", function(self, delta)
+            elapsed = elapsed + delta
+            if elapsed >= 0.5 then
+                SetPlayerRaidMarker()
+                hasSetMarker = true
+                self:SetScript("OnUpdate", nil)
+            end
+        end)
+    end
+end
+
+-- Reset marker flag when leaving group
+markerFrame:RegisterEvent("GROUP_LEFT")
+markerFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+markerFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
+
+markerFrame:SetScript("OnEvent", function(self, event)
+    if event == "GROUP_LEFT" then
+        hasSetMarker = false
+    elseif event == "GROUP_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
+        if LockSmith:IsRunning() then
+            CheckAndSetMarker()
+        end
+    end
+end)
