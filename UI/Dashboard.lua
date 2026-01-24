@@ -863,7 +863,7 @@ function LockSmith.Dashboard:InitializeSettings(content)
     scrollFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -30, 5)
 
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-    scrollChild:SetSize(scrollFrame:GetWidth(), 1000)
+    scrollChild:SetSize(360, 1000) -- Fixed width to match content area
     scrollFrame:SetScrollChild(scrollChild)
 
     local yOffset = -10
