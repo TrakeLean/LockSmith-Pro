@@ -804,8 +804,166 @@ function LockSmith.Dashboard:UpdateBoxStats()
     boxContentFrame:SetHeight(totalHeight)
 end
 
+-- ================================
+-- Settings Tab
+-- ================================
+
 function LockSmith.Dashboard:InitializeSettings(content)
-    local text = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    text:SetPoint("CENTER")
-    text:SetText("Settings - Coming Soon")
+    -- Scroll frame for settings
+    local scrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", content, "TOPLEFT", 5, -5)
+    scrollFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -30, 5)
+
+    local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+    scrollChild:SetSize(scrollFrame:GetWidth(), 1000)
+    scrollFrame:SetScrollChild(scrollChild)
+
+    local yOffset = -10
+
+    -- Helper function to create header
+    local function CreateHeader(text)
+        local header = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        header:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+        header:SetText("|cffffcc00" .. text .. "|r")
+        yOffset = yOffset - 25
+        return header
+    end
+
+    -- Helper function to create checkbox
+    local function CreateCheckbox(label, dbKey)
+        local checkbox = CreateFrame("CheckButton", nil, scrollChild, "ChatConfigCheckButtonTemplate")
+        checkbox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+        _G[checkbox:GetName() .. "Text"]:SetText(label)
+        checkbox:SetChecked(LockSmithDB[dbKey])
+        checkbox:SetScript("OnClick", function(self)
+            LockSmithDB[dbKey] = self:GetChecked()
+        end)
+        yOffset = yOffset - 25
+        return checkbox
+    end
+
+    -- Channel Monitoring
+    CreateHeader("Channel Monitoring")
+    CreateCheckbox("Monitor Trade Channel", "monitorTrade")
+    CreateCheckbox("Monitor General Channel", "monitorGeneral")
+    CreateCheckbox("Monitor LFG Channel", "monitorLFG")
+    CreateCheckbox("Monitor Whispers", "monitorWhisper")
+    CreateCheckbox("Play Sound Effects", "playSoundEffects")
+    CreateCheckbox("Auto-mark Self with Star (Party Leader)", "autoMarkSelf")
+    CreateCheckbox("Auto-mark Customers with Raid Icons", "autoMarkCustomers")
+    yOffset = yOffset - 10
+
+    -- Advertisement Settings
+    CreateHeader("Advertisement")
+
+    local adLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    adLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    adLabel:SetText("Advertisement Message:")
+    yOffset = yOffset - 20
+
+    local adMsgBox = CreateFrame("EditBox", nil, scrollChild, "InputBoxTemplate")
+    adMsgBox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    adMsgBox:SetSize(340, 30)
+    adMsgBox:SetText(LockSmithDB.adMessage or "")
+    adMsgBox:SetAutoFocus(false)
+    adMsgBox:SetScript("OnTextChanged", function(self)
+        LockSmithDB.adMessage = self:GetText()
+    end)
+    adMsgBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    yOffset = yOffset - 40
+
+    local setDefaultBtn = CreateFrame("Button", nil, scrollChild, "GameMenuButtonTemplate")
+    setDefaultBtn:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    setDefaultBtn:SetSize(120, 25)
+    setDefaultBtn:SetText("Set Default")
+    setDefaultBtn:SetScript("OnClick", function()
+        local default = "LF Rogue Lockpicking service! Free picks, tips appreciated {rt1}"
+        LockSmithDB.adMessage = default
+        adMsgBox:SetText(default)
+    end)
+    yOffset = yOffset - 35
+
+    local adChannelLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    adChannelLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    adChannelLabel:SetText("Send Advertisement To:")
+    yOffset = yOffset - 20
+
+    CreateCheckbox("Trade", "adTrade")
+    CreateCheckbox("General", "adGeneral")
+    CreateCheckbox("LFG", "adLFG")
+    CreateCheckbox("Yell", "adYell")
+    yOffset = yOffset - 5
+
+    local timerCheckbox = CreateCheckbox("Enable Auto-Advertisement Timer", "adTimerEnabled")
+    yOffset = yOffset - 5
+
+    local timerLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    timerLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    timerLabel:SetText("Timer Interval (seconds):")
+    yOffset = yOffset - 20
+
+    local timerSlider = CreateFrame("Slider", nil, scrollChild, "OptionsSliderTemplate")
+    timerSlider:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, yOffset)
+    timerSlider:SetMinMaxValues(30, 600)
+    timerSlider:SetValue(LockSmithDB.adTimerInterval or 60)
+    timerSlider:SetValueStep(10)
+    timerSlider:SetObeyStepOnDrag(true)
+    _G[timerSlider:GetName() .. "Low"]:SetText("30s")
+    _G[timerSlider:GetName() .. "High"]:SetText("10m")
+    _G[timerSlider:GetName() .. "Text"]:SetText("Interval: " .. (LockSmithDB.adTimerInterval or 60) .. "s")
+    timerSlider:SetScript("OnValueChanged", function(self, value)
+        LockSmithDB.adTimerInterval = value
+        _G[self:GetName() .. "Text"]:SetText("Interval: " .. value .. "s")
+    end)
+    yOffset = yOffset - 50
+
+    -- Auto-Response Settings
+    CreateHeader("Auto-Response")
+    CreateCheckbox("Auto-invite on Whisper", "autoInviteWhisper")
+    CreateCheckbox("Show Popup on Any Whisper", "popupOnAnyWhisper")
+    CreateCheckbox("Low Skill Whisper", "lowSkillWhisper")
+    yOffset = yOffset - 5
+
+    local lowSkillLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    lowSkillLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    lowSkillLabel:SetText("Low Skill Message:")
+    yOffset = yOffset - 20
+
+    local lowSkillBox = CreateFrame("EditBox", nil, scrollChild, "InputBoxTemplate")
+    lowSkillBox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    lowSkillBox:SetSize(340, 30)
+    lowSkillBox:SetText(LockSmithDB.lowSkillMessage or "")
+    lowSkillBox:SetAutoFocus(false)
+    lowSkillBox:SetScript("OnTextChanged", function(self)
+        LockSmithDB.lowSkillMessage = self:GetText()
+    end)
+    lowSkillBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    yOffset = yOffset - 40
+
+    CreateCheckbox("Thank-You Whisper (after tip)", "thankYouWhisper")
+    yOffset = yOffset - 5
+
+    local thankYouLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    thankYouLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    thankYouLabel:SetText("Thank-You Message:")
+    yOffset = yOffset - 20
+
+    local thankYouBox = CreateFrame("EditBox", nil, scrollChild, "InputBoxTemplate")
+    thankYouBox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    thankYouBox:SetSize(340, 30)
+    thankYouBox:SetText(LockSmithDB.thankYouMessage or "")
+    thankYouBox:SetAutoFocus(false)
+    thankYouBox:SetScript("OnTextChanged", function(self)
+        LockSmithDB.thankYouMessage = self:GetText()
+    end)
+    thankYouBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    yOffset = yOffset - 40
+
+    local helpText = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    helpText:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    helpText:SetText("|cffccccccVariables: %CURRENT%, %REQUIRED%, %TIP%|r")
+    yOffset = yOffset - 30
+
+    -- Update scroll child height
+    scrollChild:SetHeight(math.abs(yOffset) + 20)
 end
