@@ -303,6 +303,7 @@ local jobList = {} -- Active job requests
 local jobFrames = {} -- UI frames for each job
 local jobScrollFrame = nil
 local jobContentFrame = nil
+local lastAdSendTime = 0 -- Track last ad send time
 
 function LockSmith.Dashboard:InitializeJobBoard(content)
     -- Status bar at top
@@ -388,9 +389,19 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
     sendAdBtn:SetScript("OnClick", function()
         if LockSmith.Advertisement then
             LockSmith.Advertisement:SendAdvertisement()
+            LockSmith.Dashboard:UpdateAdButton()
         end
     end)
     content.sendAdBtn = sendAdBtn
+
+    -- Start ticker for ad countdown
+    if not tabs.jobboard.adTicker then
+        tabs.jobboard.adTicker = C_Timer.NewTicker(1, function()
+            if currentTab == "jobboard" then
+                LockSmith.Dashboard:UpdateAdButton()
+            end
+        end)
+    end
 
     -- Yell Ad button
     local yellAdBtn = CreateFrame("Button", nil, adButtonFrame, "GameMenuButtonTemplate")
@@ -406,6 +417,32 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
 
     -- Update status initially
     LockSmith.Dashboard:UpdateJobBoardStatus()
+end
+
+-- Update ad button with countdown
+function LockSmith.Dashboard:UpdateAdButton()
+    if not tabs.jobboard or not tabs.jobboard.content then return end
+
+    local sendAdBtn = tabs.jobboard.content.sendAdBtn
+    if not sendAdBtn then return end
+
+    local now = GetTime()
+    local interval = LockSmithDB.adTimerInterval or 60
+    local timeSinceLastAd = now - lastAdSendTime
+    local timeRemaining = math.max(0, interval - timeSinceLastAd)
+
+    if timeRemaining > 0 then
+        local seconds = math.ceil(timeRemaining)
+        sendAdBtn:SetText("Send Ad (" .. seconds .. "s)")
+    else
+        sendAdBtn:SetText("Send Ad")
+    end
+end
+
+-- Track ad send
+function LockSmith.Dashboard:OnAdSent()
+    lastAdSendTime = GetTime()
+    LockSmith.Dashboard:UpdateAdButton()
 end
 
 -- Update status bar

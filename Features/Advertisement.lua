@@ -54,6 +54,11 @@ function LockSmith.Advertisement:SendAdvertisement()
         print("|cffff0000LockSmith:|r No channels available for advertisement")
     end
 
+    -- Notify dashboard
+    if LockSmith.Dashboard then
+        LockSmith.Dashboard:OnAdSent()
+    end
+
     self:ClearAdReady()
 end
 

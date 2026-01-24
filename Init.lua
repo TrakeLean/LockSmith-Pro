@@ -177,6 +177,11 @@ function LockSmith:Start()
     if LockSmithDB.adTimerEnabled then
         LockSmith.Advertisement:StartAdTimer()
     end
+
+    -- Update dashboard if open
+    if LockSmith.Dashboard then
+        LockSmith.Dashboard:UpdateJobBoardStatus()
+    end
 end
 
 -- Stop the addon
@@ -199,6 +204,11 @@ function LockSmith:Stop()
 
     -- Clear session ignore list
     LockSmith.ChatMonitor:ClearSessionIgnore()
+
+    -- Update dashboard if open
+    if LockSmith.Dashboard then
+        LockSmith.Dashboard:UpdateJobBoardStatus()
+    end
 end
 
 -- Toggle addon on/off
