@@ -179,6 +179,11 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
             if LockSmith:IsRunning() and (goldReceived > 0 or totalBoxes > 0) then
                 LockSmith.Statistics:TrackGoldReceived(goldReceived, pendingTradePartner, boxCounts)
 
+                -- Track trade partner to prevent popup on "ty" whispers
+                if LockSmith.ChatMonitor and LockSmith.ChatMonitor.TrackTradePartner and pendingTradePartner then
+                    LockSmith.ChatMonitor:TrackTradePartner(pendingTradePartner)
+                end
+
                 -- Send thank-you message after 2 second delay
                 if goldReceived > 0 and LockSmith.AutoResponse then
                     local partner = pendingTradePartner

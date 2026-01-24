@@ -7,6 +7,8 @@ LockSmith.ChatMonitor = {}
 local sessionIgnoreList = {}
 local lastInviteTime = {}
 local INVITE_THROTTLE = 30
+local recentTradePartners = {}  -- Cache of last 5 people we traded with
+local MAX_RECENT_TRADES = 5
 
 local function NormalizeSenderName(name)
     if type(name) ~= "string" then
@@ -63,6 +65,40 @@ local function IsGroupMember(name)
     return false
 end
 
+-- Add a player to the recent trade partners cache
+local function AddToRecentTradePartners(name)
+    local normalized = NormalizeSenderName(name)
+    if normalized == "" then return end
+
+    -- Remove if already exists (to move to front)
+    for i = #recentTradePartners, 1, -1 do
+        if recentTradePartners[i] == normalized then
+            table.remove(recentTradePartners, i)
+        end
+    end
+
+    -- Add to front
+    table.insert(recentTradePartners, 1, normalized)
+
+    -- Keep only last 5
+    while #recentTradePartners > MAX_RECENT_TRADES do
+        table.remove(recentTradePartners)
+    end
+end
+
+-- Check if player was a recent trade partner
+local function WasRecentTradePartner(name)
+    local normalized = NormalizeSenderName(name)
+    if normalized == "" then return false end
+
+    for _, recentName in ipairs(recentTradePartners) do
+        if recentName == normalized then
+            return true
+        end
+    end
+    return false
+end
+
 function LockSmith.ChatMonitor:IsSelfSender(sender)
     local playerName = UnitName("player")
     if not playerName then
@@ -92,6 +128,11 @@ function LockSmith.ChatMonitor:IsSessionIgnored(sender)
     return sessionIgnoreList[normalized] == true
 end
 
+-- Track a completed trade partner (called from Statistics module)
+function LockSmith.ChatMonitor:TrackTradePartner(partnerName)
+    AddToRecentTradePartners(partnerName)
+end
+
 -- Process lockpick request from chat
 function LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelName, channelNumber, allowNonKeyword)
     if not LockSmith:IsRunning() then return end
@@ -101,6 +142,9 @@ function LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelNa
 
     -- Check if sender is ignored for this session
     if self:IsSessionIgnored(sender) then return end
+
+    -- Check if sender was a recent trade partner (skip popup if they just traded with us)
+    if WasRecentTradePartner(sender) then return end
 
     -- Check if message has lockpicking keywords
     local hasKeyword = LockSmith:HasLockpickKeyword(message)
