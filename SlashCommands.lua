@@ -46,7 +46,12 @@ SlashCmdList["LOCKSMITH"] = function(msg)
         end
 
     else
-        -- Open settings GUI
-        LockSmith.UI:OpenSettingsGUI()
+        -- Open dashboard
+        if LockSmith.Dashboard then
+            LockSmith.Dashboard:Show()
+        else
+            -- Fallback to old settings GUI if dashboard not loaded
+            LockSmith.UI:OpenSettingsGUI()
+        end
     end
 end

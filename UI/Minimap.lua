@@ -53,7 +53,7 @@ local function CreateMinimapButton()
         end
 
         GameTooltip:AddLine(" ", 1, 1, 1)
-        GameTooltip:AddLine("|cffffffffLeft-Click:|r Open Settings", 0.7, 0.7, 0.7)
+        GameTooltip:AddLine("|cffffffffLeft-Click:|r Toggle Dashboard", 0.7, 0.7, 0.7)
         GameTooltip:AddLine("|cffffffffRight-Click:|r Start/Stop", 0.7, 0.7, 0.7)
         GameTooltip:AddLine("|cffffffffShift+Click:|r Send Ad", 0.7, 0.7, 0.7)
         GameTooltip:AddLine("|cffffffffDrag:|r Move Button", 0.7, 0.7, 0.7)
@@ -71,8 +71,10 @@ local function CreateMinimapButton()
             -- Shift+Click: Send advertisement
             LockSmith.Advertisement:SendAdvertisement()
         elseif buttonPressed == "LeftButton" then
-            -- Left-click: Open settings
-            LockSmith.UI:OpenSettingsGUI()
+            -- Left-click: Toggle dashboard
+            if LockSmith.Dashboard then
+                LockSmith.Dashboard:Toggle()
+            end
         elseif buttonPressed == "RightButton" then
             -- Right-click: Toggle start/stop
             LockSmith:Toggle()

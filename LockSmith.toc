@@ -20,6 +20,7 @@ Features\AutoResponse.lua
 Features\ChatMonitor.lua
 
 # UI
+UI\Dashboard.lua
 UI\Notification.lua
 UI\Settings.lua
 UI\Minimap.lua

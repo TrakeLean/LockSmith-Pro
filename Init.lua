@@ -232,6 +232,11 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         end
 
     elseif event == "PLAYER_LOGIN" then
+        -- Initialize dashboard
+        if LockSmith.Dashboard then
+            LockSmith.Dashboard:Initialize()
+        end
+
         -- Update skill on login
         LockSmith.Skills:GetLockpickingSkill()
 
