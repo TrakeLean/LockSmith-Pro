@@ -864,7 +864,6 @@ function LockSmith.Dashboard:InitializeSettings(content)
 
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
     scrollChild:SetWidth(350) -- Set width explicitly
-    scrollChild:SetHeight(1200) -- Will be updated at end
     scrollFrame:SetScrollChild(scrollChild)
 
     -- Ensure visibility
