@@ -8,7 +8,10 @@
       "Bash(gh repo create:*)",
       "Bash(git rm:*)",
       "Bash(git push:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(git tag:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
