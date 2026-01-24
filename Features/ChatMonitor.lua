@@ -210,6 +210,9 @@ local function OnChatMessage(event, ...)
         if type(message) ~= "string" then return end
         if LockSmith.ChatMonitor:IsSelfSender(sender) then return end
 
+        -- Skip if they were a recent trade partner (they're just saying "ty")
+        if WasRecentTradePartner(sender) then return end
+
         -- Auto-invite if enabled (and skip popup since we're auto-inviting)
         if LockSmithDB.autoInviteWhisper and CanInvite(sender) and not IsGroupMember(sender) then
             if LockSmith.Utils and LockSmith.Utils.InvitePlayer then

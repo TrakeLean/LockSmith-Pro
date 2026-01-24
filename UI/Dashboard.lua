@@ -50,8 +50,8 @@ end
 
 local tabs = {}
 
-local function SwitchTab(tabName)
-    if currentTab == tabName then return end
+local function SwitchTab(tabName, forceRefresh)
+    if currentTab == tabName and not forceRefresh then return end
 
     currentTab = tabName
 
@@ -83,10 +83,29 @@ local function SwitchTab(tabName)
 end
 
 local tabButtons = {} -- Track buttons for positioning
+local numTabs = 3
+
+-- Function to update tab button widths based on container width
+local function UpdateTabButtonWidths(containerWidth)
+    if not containerWidth or containerWidth <= 0 then return end
+
+    -- Calculate available width: container width - left margin (10) - right margin (10 + scroll bar ~17) - gaps between buttons (4px * 2)
+    -- We need to account for the scroll bar on the right side
+    local availableWidth = containerWidth - 15 - 30 - (4 * (numTabs - 1))
+    local buttonWidth = math.floor(availableWidth / numTabs)
+
+    -- Update each button's width
+    for _, button in ipairs(tabButtons) do
+        if button then
+            button:SetWidth(buttonWidth)
+        end
+    end
+end
 
 local function CreateTabButton(parent, tabName, displayName, index)
     local button = CreateFrame("Button", "LockSmithTab" .. tabName, parent)
-    button:SetSize(120, 30)
+    button:SetHeight(30)
+    button:SetWidth(120) -- Initial width, will be updated
 
     -- Position buttons horizontally
     if index == 1 then
@@ -229,6 +248,13 @@ local function CreateDashboardFrame()
     local tabContainer = CreateFrame("Frame", "LockSmithTabContainer", mainFrame)
     tabContainer:SetPoint("TOPLEFT", titleBar, "BOTTOMLEFT", 0, -40) -- Space for tab buttons
     tabContainer:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -15, 15)
+    mainFrame.tabContainer = tabContainer
+
+    -- Handle window resize
+    mainFrame:SetScript("OnSizeChanged", function(_, width, height)
+        SaveWindowPosition()
+        LockSmith.Dashboard:OnWindowResize(width, height)
+    end)
 
     -- Create tabs
     tabs.jobboard = {
@@ -254,8 +280,11 @@ local function CreateDashboardFrame()
     -- Load saved position/size
     LoadWindowPosition()
 
-    -- Default to Job Board tab
-    SwitchTab("jobboard")
+    -- Set initial tab button widths
+    UpdateTabButtonWidths(mainFrame:GetWidth())
+
+    -- Default to Job Board tab (force refresh to ensure it shows)
+    SwitchTab("jobboard", true)
 
     mainFrame:Hide() -- Start hidden
 
@@ -297,6 +326,28 @@ end
 
 function LockSmith.Dashboard:IsShown()
     return mainFrame and mainFrame:IsShown()
+end
+
+-- Handle window resize for responsive layout
+function LockSmith.Dashboard:OnWindowResize(width, height)
+    if not mainFrame then return end
+
+    -- Update tab button widths to fill the row
+    UpdateTabButtonWidths(width)
+
+    -- Rebuild job list to adjust card widths
+    if currentTab == "jobboard" then
+        -- Update scroll frame content width
+        if tabs.jobboard and tabs.jobboard.jobScrollFrame and tabs.jobboard.jobContentFrame then
+            tabs.jobboard.jobContentFrame:SetWidth(tabs.jobboard.jobScrollFrame:GetWidth())
+        end
+        LockSmith.Dashboard:RebuildJobList()
+    end
+
+    -- Update stats tab layout
+    if currentTab == "stats" and tabs.stats and tabs.stats.content then
+        LockSmith.Dashboard:UpdateStatsLayout(width, height)
+    end
 end
 
 -- ================================
@@ -356,6 +407,10 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
     jobContentFrame:SetSize(jobScrollFrame:GetWidth(), 1) -- Height will grow dynamically
     jobScrollFrame:SetScrollChild(jobContentFrame)
 
+    -- Store references for resize handling
+    tabs.jobboard.jobScrollFrame = jobScrollFrame
+    tabs.jobboard.jobContentFrame = jobContentFrame
+
     -- Session stats footer
     local statsFooter = CreateFrame("Frame", nil, content, "BackdropTemplate")
     statsFooter:SetHeight(50)
@@ -371,13 +426,37 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
     statsFooter:SetBackdropBorderColor(0.4, 0.15, 0.15, 1)
 
     local statsTitle = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    statsTitle:SetPoint("TOPLEFT", statsFooter, "TOPLEFT", 10, -5)
+    statsTitle:SetPoint("TOP", statsFooter, "TOP", 0, -5)
     statsTitle:SetText("|cffffcc00SESSION STATS|r")
 
-    local statsText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    statsText:SetPoint("LEFT", statsFooter, "LEFT", 10, -10)
-    statsText:SetText("Gold: 0g | Jobs: 0 | Avg: 0g")
-    content.statsText = statsText
+    -- Individual stat labels spread evenly across the width, centered vertically
+    local goldText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    goldText:SetPoint("LEFT", statsFooter, "LEFT", 10, 0)
+    goldText:SetPoint("RIGHT", statsFooter, "LEFT", (statsFooter:GetWidth() or 400) * 0.25, 0)
+    goldText:SetJustifyH("CENTER")
+    goldText:SetText("Gold: 0g")
+    content.goldText = goldText
+
+    local jobsText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    jobsText:SetPoint("LEFT", statsFooter, "LEFT", (statsFooter:GetWidth() or 400) * 0.25, 0)
+    jobsText:SetPoint("RIGHT", statsFooter, "CENTER", 0, 0)
+    jobsText:SetJustifyH("CENTER")
+    jobsText:SetText("Jobs: 0")
+    content.jobsText = jobsText
+
+    local boxesText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    boxesText:SetPoint("LEFT", statsFooter, "CENTER", 0, 0)
+    boxesText:SetPoint("RIGHT", statsFooter, "RIGHT", -(statsFooter:GetWidth() or 400) * 0.25, 0)
+    boxesText:SetJustifyH("CENTER")
+    boxesText:SetText("Boxes: 0")
+    content.boxesText = boxesText
+
+    local avgText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    avgText:SetPoint("LEFT", statsFooter, "RIGHT", -(statsFooter:GetWidth() or 400) * 0.25, 0)
+    avgText:SetPoint("RIGHT", statsFooter, "RIGHT", -10, 0)
+    avgText:SetJustifyH("CENTER")
+    avgText:SetText("Avg: 0g")
+    content.avgText = avgText
 
     -- Ad buttons
     local adButtonFrame = CreateFrame("Frame", nil, content)
@@ -385,10 +464,11 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
     adButtonFrame:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 5, 5)
     adButtonFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -5, 5)
 
-    -- Send Ad button (with countdown)
+    -- Send Ad button (with countdown) - use anchors for responsive sizing
     local sendAdBtn = CreateFrame("Button", nil, adButtonFrame, "GameMenuButtonTemplate")
-    sendAdBtn:SetSize(180, 30)
+    sendAdBtn:SetHeight(30)
     sendAdBtn:SetPoint("LEFT", adButtonFrame, "LEFT", 5, 0)
+    sendAdBtn:SetPoint("RIGHT", adButtonFrame, "CENTER", -2, 0)
     sendAdBtn:SetText("Send Ad")
     sendAdBtn:SetScript("OnClick", function()
         if LockSmith.Advertisement then
@@ -407,9 +487,10 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
         end)
     end
 
-    -- Yell Ad button
+    -- Yell Ad button - use anchors for responsive sizing
     local yellAdBtn = CreateFrame("Button", nil, adButtonFrame, "GameMenuButtonTemplate")
-    yellAdBtn:SetSize(180, 30)
+    yellAdBtn:SetHeight(30)
+    yellAdBtn:SetPoint("LEFT", adButtonFrame, "CENTER", 2, 0)
     yellAdBtn:SetPoint("RIGHT", adButtonFrame, "RIGHT", -5, 0)
     yellAdBtn:SetText("Yell Ad")
     yellAdBtn:SetScript("OnClick", function()
@@ -476,17 +557,17 @@ function LockSmith.Dashboard:UpdateJobBoardStatus()
         content.startStopBtn:SetText(isRunning and "Stop" or "Start")
     end
 
-    -- Session stats
-    if content.statsText then
+    -- Session stats (update individual text elements)
+    if content.goldText then
         local sessionGold = LockSmith.Statistics:GetSessionGold()
-        local totalJobs = LockSmithDB.stats.totalJobs or 0
-        local avgTip = LockSmith.Statistics:GetAverageTip()
+        local sessionJobs = LockSmith.Statistics:GetSessionJobs()
+        local sessionBoxes = LockSmith.Statistics:GetSessionBoxes()
+        local sessionAvg = LockSmith.Statistics:GetSessionAverage()
 
-        content.statsText:SetText(
-            "Gold: " .. LockSmith.Utils:FormatGold(sessionGold) ..
-            " | Jobs: " .. totalJobs ..
-            " | Avg: " .. LockSmith.Utils:FormatGold(avgTip)
-        )
+        content.goldText:SetText("Gold: " .. LockSmith.Utils:FormatGold(sessionGold))
+        content.jobsText:SetText("Jobs: " .. sessionJobs)
+        content.boxesText:SetText("Boxes: " .. sessionBoxes)
+        content.avgText:SetText("Avg: " .. LockSmith.Utils:FormatGold(sessionAvg))
     end
 end
 
@@ -538,7 +619,6 @@ function LockSmith.Dashboard:RebuildJobList()
     if not jobContentFrame then return end
 
     local yOffset = -5
-    local cardHeight = 95
     local cardSpacing = 10
 
     for i, job in ipairs(jobList) do
@@ -552,18 +632,18 @@ function LockSmith.Dashboard:RebuildJobList()
         end
 
         table.insert(jobFrames, card)
-        yOffset = yOffset - cardHeight - cardSpacing
+        -- Use the card's actual height (which is now dynamic)
+        yOffset = yOffset - card:GetHeight() - cardSpacing
     end
 
     -- Update content height for scrolling
-    local totalHeight = math.max(1, #jobList * (cardHeight + cardSpacing) + 10)
+    local totalHeight = math.abs(yOffset) + 10
     jobContentFrame:SetHeight(totalHeight)
 end
 
 -- Create a job card
 function LockSmith.Dashboard:CreateJobCard(job, index)
     local card = CreateFrame("Frame", nil, jobContentFrame, "BackdropTemplate")
-    card:SetHeight(95)
     card:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -573,38 +653,65 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
     card:SetBackdropColor(0.2, 0.1, 0.1, 0.95)
     card:SetBackdropBorderColor(0.5, 0.2, 0.2, 1)
 
-    -- Player name
-    local playerName = card:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    -- Close button (X) in top-right corner
+    local closeBtn = CreateFrame("Button", nil, card)
+    closeBtn:SetSize(20, 20)
+    closeBtn:SetPoint("TOPRIGHT", card, "TOPRIGHT", -4, -4)
+
+    local closeBtnText = closeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    closeBtnText:SetPoint("CENTER", closeBtn, "CENTER", 0, 0)
+    closeBtnText:SetText("|cffaaaaaa×|r")
+
+    closeBtn:SetScript("OnEnter", function(self)
+        closeBtnText:SetText("|cffff0000×|r")
+    end)
+    closeBtn:SetScript("OnLeave", function(self)
+        closeBtnText:SetText("|cffaaaaaa×|r")
+    end)
+    closeBtn:SetScript("OnClick", function()
+        LockSmith.Dashboard:RemoveJob(index)
+    end)
+
+    -- Player name (smaller font)
+    local playerName = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     playerName:SetPoint("TOPLEFT", card, "TOPLEFT", 10, -8)
     playerName:SetText("|cff" .. (job.channelName == "WHISPER" and "ff69b4" or "ffcc00") .. job.sender .. "|r")
 
-    -- Channel
+    -- Channel (smaller font)
     local channel = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    channel:SetPoint("TOPRIGHT", card, "TOPRIGHT", -10, -8)
+    channel:SetPoint("TOPRIGHT", closeBtn, "TOPLEFT", -4, -6)
     channel:SetText(job.channelName or "Unknown")
 
-    -- Message
-    local msg = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    msg:SetPoint("TOPLEFT", playerName, "BOTTOMLEFT", 0, -5)
-    msg:SetPoint("TOPRIGHT", card, "TOPRIGHT", -10, -25)
-    msg:SetHeight(20)
+    -- Message (smaller font, with word wrapping)
+    local msg = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    msg:SetPoint("TOPLEFT", playerName, "BOTTOMLEFT", 0, -4)
+    msg:SetPoint("TOPRIGHT", card, "TOPRIGHT", -10, -20)
     msg:SetJustifyH("LEFT")
-    msg:SetWordWrap(false)
-    msg:SetText("\"" .. (job.message or "") .. "\"")
+    msg:SetJustifyV("TOP")
+    msg:SetWordWrap(true)
+    msg:SetMaxLines(0) -- No limit on lines
+    msg:SetNonSpaceWrap(false)
 
-    -- Box info
-    local boxInfo = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    boxInfo:SetPoint("TOPLEFT", msg, "BOTTOMLEFT", 0, -5)
+    local msgText = job.message or ""
+    msg:SetText("\"" .. msgText .. "\"")
+
+    -- Let the text calculate its height
+    local msgHeight = msg:GetStringHeight()
+
+    -- Box info (smaller font)
+    local boxInfo = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    boxInfo:SetPoint("TOPLEFT", msg, "BOTTOMLEFT", 0, -4)
     if job.boxData then
         boxInfo:SetText("|cff00ff00Box:|r " .. job.boxData.name .. " (|cffffcc00" .. job.requiredSkill .. " skill|r)")
     else
         boxInfo:SetText("|cffccccccBox: Unknown|r")
     end
 
-    -- Buttons
+    -- Buttons (responsive width - spread evenly across card)
     local inviteBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
-    inviteBtn:SetSize(90, 25)
-    inviteBtn:SetPoint("BOTTOMLEFT", card, "BOTTOMLEFT", 10, 8)
+    inviteBtn:SetHeight(22)
+    inviteBtn:SetPoint("TOPLEFT", boxInfo, "BOTTOMLEFT", -2, -6)
+    inviteBtn:SetPoint("RIGHT", card, "LEFT", (card:GetWidth() or 300) / 3 - 4, 0)
     inviteBtn:SetText("Invite")
     inviteBtn:SetScript("OnClick", function()
         if LockSmith.Utils then
@@ -613,23 +720,30 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
     end)
 
     local whisperBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
-    whisperBtn:SetSize(90, 25)
-    whisperBtn:SetPoint("LEFT", inviteBtn, "RIGHT", 5, 0)
+    whisperBtn:SetHeight(22)
+    whisperBtn:SetPoint("LEFT", inviteBtn, "RIGHT", 4, 0)
+    whisperBtn:SetPoint("RIGHT", card, "CENTER", (card:GetWidth() or 300) / 6 - 2, 0)
     whisperBtn:SetText("Whisper")
     whisperBtn:SetScript("OnClick", function()
         ChatFrame_SendTell(job.sender)
     end)
 
     local ignoreBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
-    ignoreBtn:SetSize(90, 25)
-    ignoreBtn:SetPoint("LEFT", whisperBtn, "RIGHT", 5, 0)
+    ignoreBtn:SetHeight(22)
+    ignoreBtn:SetPoint("LEFT", whisperBtn, "RIGHT", 4, 0)
+    ignoreBtn:SetPoint("RIGHT", card, "RIGHT", -10, 0)
     ignoreBtn:SetText("Ignore")
     ignoreBtn:SetScript("OnClick", function()
-        if LockSmith.ChatMonitor then
-            LockSmith.ChatMonitor:AddSessionIgnore(job.sender)
+        if LockSmith.ChatMonitor and LockSmith.ChatMonitor.AddToSessionIgnore then
+            LockSmith.ChatMonitor:AddToSessionIgnore(job.sender)
         end
         LockSmith.Dashboard:RemoveJob(index)
     end)
+
+    -- Calculate total card height dynamically
+    -- Top padding (8) + playerName height (~14) + spacing (4) + message height + spacing (4) + boxInfo height (~14) + spacing (6) + button height (22) + bottom padding (6)
+    local totalHeight = 8 + 14 + 4 + msgHeight + 4 + 14 + 6 + 22 + 6
+    card:SetHeight(math.max(95, totalHeight)) -- Minimum 95 to match original
 
     return card
 end
@@ -657,53 +771,63 @@ end
 -- ================================
 
 function LockSmith.Dashboard:InitializeStats(content)
-    -- Main stats cards
-    local card1 = LockSmith.Dashboard:CreateStatCard(content, "Total Gold", "totalGold")
-    card1:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
+    -- Create a scroll frame for ALL stats content
+    local statsScrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
+    statsScrollFrame:SetPoint("TOPLEFT", content, "TOPLEFT", 5, -5)
+    statsScrollFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -30, 50)
+    content.statsScrollFrame = statsScrollFrame
+
+    -- Scroll child that will hold all stats content
+    local scrollChild = CreateFrame("Frame", nil, statsScrollFrame)
+    scrollChild:SetWidth(statsScrollFrame:GetWidth())
+    statsScrollFrame:SetScrollChild(scrollChild)
+    content.statsScrollChild = scrollChild
+
+    -- Main stats cards (now parented to scrollChild)
+    local card1 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Total Gold", "totalGold")
+    card1:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, -10)
     card1:SetSize(180, 70)
     content.statCard1 = card1
 
-    local card2 = LockSmith.Dashboard:CreateStatCard(content, "Total Jobs", "totalJobs")
+    local card2 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Total Jobs", "totalJobs")
     card2:SetPoint("LEFT", card1, "RIGHT", 10, 0)
     card2:SetSize(180, 70)
     content.statCard2 = card2
 
-    local card3 = LockSmith.Dashboard:CreateStatCard(content, "Total Boxes", "totalBoxes")
+    local card3 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Total Boxes", "totalBoxes")
     card3:SetPoint("TOPLEFT", card1, "BOTTOMLEFT", 0, -10)
     card3:SetSize(180, 70)
     content.statCard3 = card3
 
-    local card4 = LockSmith.Dashboard:CreateStatCard(content, "Average Tip", "avgTip")
+    local card4 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Average Tip", "avgTip")
     card4:SetPoint("LEFT", card3, "RIGHT", 10, 0)
     card4:SetSize(180, 70)
     content.statCard4 = card4
 
-    local card5 = LockSmith.Dashboard:CreateStatCard(content, "Last Session", "lastSession")
+    local card5 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Last Session", "lastSession")
     card5:SetPoint("TOPLEFT", card3, "BOTTOMLEFT", 0, -10)
     card5:SetSize(180, 70)
     content.statCard5 = card5
 
-    local card6 = LockSmith.Dashboard:CreateStatCard(content, "Best Session", "bestSession")
+    local card6 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Best Session", "bestSession")
     card6:SetPoint("LEFT", card5, "RIGHT", 10, 0)
     card6:SetSize(180, 70)
     content.statCard6 = card6
 
-    -- Per-box breakdown
-    local boxHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    boxHeader:SetPoint("TOPLEFT", card5, "BOTTOMLEFT", 0, -90)
+    -- Per-box breakdown header
+    local boxHeader = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    boxHeader:SetPoint("TOPLEFT", card5, "BOTTOMLEFT", 0, -25)
     boxHeader:SetText("|cffffcc00Boxes Opened|r")
+    content.boxHeader = boxHeader
 
-    -- Scrollable box list
-    local boxScrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
-    boxScrollFrame:SetPoint("TOPLEFT", boxHeader, "BOTTOMLEFT", 0, -10)
-    boxScrollFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -30, 50)
+    -- Box list container (simple frame, no nested scroll)
+    local boxListFrame = CreateFrame("Frame", nil, scrollChild)
+    boxListFrame:SetPoint("TOPLEFT", boxHeader, "BOTTOMLEFT", 0, -10)
+    boxListFrame:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -10, -280)
+    boxListFrame:SetHeight(1) -- Will grow dynamically
+    content.boxListFrame = boxListFrame
 
-    local boxContentFrame = CreateFrame("Frame", nil, boxScrollFrame)
-    boxContentFrame:SetSize(boxScrollFrame:GetWidth(), 1)
-    boxScrollFrame:SetScrollChild(boxContentFrame)
-    content.boxContentFrame = boxContentFrame
-
-    -- Reset button
+    -- Reset button at bottom of scroll content
     local resetBtn = CreateFrame("Button", nil, content, "GameMenuButtonTemplate")
     resetBtn:SetSize(150, 30)
     resetBtn:SetPoint("BOTTOM", content, "BOTTOM", 0, 10)
@@ -731,7 +855,14 @@ function LockSmith.Dashboard:InitializeStats(content)
 
     -- Set up update ticker for skill level (every 5 seconds when tab visible)
     tabs.stats.onShow = function()
+        -- Update layout based on current window width
+        if mainFrame then
+            LockSmith.Dashboard:UpdateStatsLayout(mainFrame:GetWidth(), mainFrame:GetHeight())
+        end
+
+        -- Update stat values
         LockSmith.Dashboard:UpdateStatsTab()
+
         if not tabs.stats.ticker then
             tabs.stats.ticker = C_Timer.NewTicker(5, function()
                 if currentTab == "stats" then
@@ -809,11 +940,12 @@ end
 function LockSmith.Dashboard:UpdateBoxStats()
     if not tabs.stats or not tabs.stats.content then return end
 
-    local boxContentFrame = tabs.stats.content.boxContentFrame
-    if not boxContentFrame then return end
+    local boxListFrame = tabs.stats.content.boxListFrame
+    local scrollChild = tabs.stats.content.statsScrollChild
+    if not boxListFrame or not scrollChild then return end
 
     -- Clear existing
-    for _, child in ipairs({boxContentFrame:GetChildren()}) do
+    for _, child in ipairs({boxListFrame:GetChildren()}) do
         child:Hide()
         child:SetParent(nil)
     end
@@ -840,16 +972,109 @@ function LockSmith.Dashboard:UpdateBoxStats()
         local name = data and data.name or boxData.key
         local label = (skill > 0 and ("|cffffcc00" .. skill .. "|r - ") or "") .. name
 
-        local line = boxContentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        line:SetPoint("TOPLEFT", boxContentFrame, "TOPLEFT", 10, yOffset)
+        local line = boxListFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        line:SetPoint("TOPLEFT", boxListFrame, "TOPLEFT", 10, yOffset)
         line:SetText(label .. ": |cff00ff00" .. boxData.count .. "|r")
 
         yOffset = yOffset - lineHeight
     end
 
-    -- Update content height
-    local totalHeight = math.max(1, #boxList * lineHeight + 10)
-    boxContentFrame:SetHeight(totalHeight)
+    -- Update box list frame height
+    local boxListHeight = math.max(1, #boxList * lineHeight + 10)
+    boxListFrame:SetHeight(boxListHeight)
+
+    -- Update total scroll child height: stat cards (3 rows * 80) + box header (40) + box list + padding
+    local totalHeight = 240 + 40 + boxListHeight + 50
+    scrollChild:SetHeight(totalHeight)
+end
+
+-- Update stats tab layout for responsive design
+function LockSmith.Dashboard:UpdateStatsLayout(width, _)
+    if not tabs.stats or not tabs.stats.content then return end
+
+    local content = tabs.stats.content
+    local scrollChild = content.statsScrollChild
+    local boxHeader = content.boxHeader
+
+    if not scrollChild then return end
+
+    -- Update scroll child width to match scroll frame
+    if content.statsScrollFrame then
+        scrollChild:SetWidth(content.statsScrollFrame:GetWidth())
+    end
+
+    -- Calculate how many columns can fit based on width
+    -- Min card width: 150px, spacing between cards: 10px, margins: 20px total
+    local minCardWidth = 150
+    local cardSpacing = 10
+    local margins = 40 -- left + right margins
+    local availableWidth = width - margins
+
+    local numColumns = 1
+    if availableWidth >= (minCardWidth * 3 + cardSpacing * 2) then
+        numColumns = 3
+    elseif availableWidth >= (minCardWidth * 2 + cardSpacing) then
+        numColumns = 2
+    end
+
+    -- Calculate actual card width to fill available space
+    local cardWidth = math.floor((availableWidth - (cardSpacing * (numColumns - 1))) / numColumns)
+
+    -- Arrange cards in grid
+    local numCards = 6
+    local numRows = math.ceil(numCards / numColumns)
+
+    for i = 1, numCards do
+        local card = content["statCard" .. i]
+        if card then
+            card:ClearAllPoints()
+
+            -- Calculate row and column for this card (0-indexed for easier math)
+            local row = math.floor((i - 1) / numColumns)
+            local col = (i - 1) % numColumns
+
+            if col == 0 then
+                -- First card in row
+                if row == 0 then
+                    card:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, -10)
+                else
+                    local prevRowFirstCard = content["statCard" .. (row * numColumns + 1 - numColumns)]
+                    card:SetPoint("TOPLEFT", prevRowFirstCard, "BOTTOMLEFT", 0, -10)
+                end
+            else
+                -- Not first card in row - anchor to left neighbor
+                local leftNeighbor = content["statCard" .. (i - 1)]
+                card:SetPoint("LEFT", leftNeighbor, "RIGHT", cardSpacing, 0)
+            end
+
+            -- Set width (or use anchors for single column mode)
+            if numColumns == 1 then
+                card:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -30, row == 0 and -10 or 0)
+            else
+                card:SetWidth(cardWidth)
+            end
+        end
+    end
+
+    -- Position box header below the last row of cards
+    local lastRowFirstCardIndex = (numRows - 1) * numColumns + 1
+    local lastRowFirstCard = content["statCard" .. lastRowFirstCardIndex]
+
+    if boxHeader and lastRowFirstCard then
+        boxHeader:ClearAllPoints()
+        boxHeader:SetPoint("TOPLEFT", lastRowFirstCard, "BOTTOMLEFT", 0, -25)
+    end
+
+    -- Update box list frame positioning
+    if content.boxListFrame then
+        local headerYOffset = -(numRows * 80 + (numRows - 1) * 10 + 10 + 25)
+        content.boxListFrame:ClearAllPoints()
+        content.boxListFrame:SetPoint("TOPLEFT", boxHeader, "BOTTOMLEFT", 0, -10)
+        content.boxListFrame:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -10, headerYOffset - 10)
+    end
+
+    -- Refresh box stats to recalculate scroll child height
+    LockSmith.Dashboard:UpdateBoxStats()
 end
 
 -- ================================
@@ -947,7 +1172,7 @@ function LockSmith.Dashboard:InitializeSettings(content)
     setDefaultBtn:SetSize(120, 25)
     setDefaultBtn:SetText("Set Default")
     setDefaultBtn:SetScript("OnClick", function()
-        local default = "LF Rogue Lockpicking service! Free picks, tips appreciated {rt1}"
+        local default = "LockSmith - Rogue lockpicking service available! Free picks, tips appreciated {rt1}"
         LockSmithDB.adMessage = default
         adMsgBox:SetText(default)
     end)
@@ -965,27 +1190,44 @@ function LockSmith.Dashboard:InitializeSettings(content)
     yOffset = yOffset - 5
 
     local timerCheckbox = CreateCheckbox("Enable Auto-Advertisement Timer", "adTimerEnabled")
-    yOffset = yOffset - 5
+    yOffset = yOffset - 10
 
-    local timerLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    timerLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
-    timerLabel:SetText("Timer Interval (seconds):")
-    yOffset = yOffset - 20
+    -- Timer interval - show current value and +/- buttons
+    local timerContainer = CreateFrame("Frame", nil, scrollChild)
+    timerContainer:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 30, yOffset)
+    timerContainer:SetSize(300, 30)
 
-    local timerSlider = CreateFrame("Slider", "LockSmithAdTimerSlider", scrollChild, "OptionsSliderTemplate")
-    timerSlider:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, yOffset)
-    timerSlider:SetMinMaxValues(30, 600)
-    timerSlider:SetValue(LockSmithDB.adTimerInterval or 60)
-    timerSlider:SetValueStep(10)
-    timerSlider:SetObeyStepOnDrag(true)
-    _G[timerSlider:GetName() .. "Low"]:SetText("30s")
-    _G[timerSlider:GetName() .. "High"]:SetText("10m")
-    _G[timerSlider:GetName() .. "Text"]:SetText("Interval: " .. (LockSmithDB.adTimerInterval or 60) .. "s")
-    timerSlider:SetScript("OnValueChanged", function(self, value)
-        LockSmithDB.adTimerInterval = value
-        _G[self:GetName() .. "Text"]:SetText("Interval: " .. value .. "s")
+    local timerLabel = timerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    timerLabel:SetPoint("LEFT", timerContainer, "LEFT", 0, 0)
+    timerLabel:SetText("Timer Interval:")
+
+    local timerValue = timerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    timerValue:SetPoint("CENTER", timerContainer, "CENTER", 0, 0)
+    timerValue:SetText("|cff00ff00" .. (LockSmithDB.adTimerInterval or 60) .. "s|r")
+
+    local decreaseBtn = CreateFrame("Button", nil, timerContainer, "GameMenuButtonTemplate")
+    decreaseBtn:SetSize(30, 25)
+    decreaseBtn:SetPoint("RIGHT", timerValue, "LEFT", -10, 0)
+    decreaseBtn:SetText("-")
+    decreaseBtn:SetScript("OnClick", function()
+        local current = LockSmithDB.adTimerInterval or 60
+        local new = math.max(30, current - 10)
+        LockSmithDB.adTimerInterval = new
+        timerValue:SetText("|cff00ff00" .. new .. "s|r")
     end)
-    yOffset = yOffset - 50
+
+    local increaseBtn = CreateFrame("Button", nil, timerContainer, "GameMenuButtonTemplate")
+    increaseBtn:SetSize(30, 25)
+    increaseBtn:SetPoint("LEFT", timerValue, "RIGHT", 10, 0)
+    increaseBtn:SetText("+")
+    increaseBtn:SetScript("OnClick", function()
+        local current = LockSmithDB.adTimerInterval or 60
+        local new = math.min(600, current + 10)
+        LockSmithDB.adTimerInterval = new
+        timerValue:SetText("|cff00ff00" .. new .. "s|r")
+    end)
+
+    yOffset = yOffset - 40
 
     -- Auto-Response Settings
     CreateHeader("Auto-Response")

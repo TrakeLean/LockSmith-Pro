@@ -6,6 +6,8 @@ LockSmith.Statistics = {}
 
 local sessionStartTime = 0
 local sessionGold = 0
+local sessionJobs = 0
+local sessionBoxes = 0
 local pendingTradePartner = nil
 local tradeCompleted = false
 local lastJobTimeByPartner = {}
@@ -82,11 +84,31 @@ end
 function LockSmith.Statistics:InitSession()
     sessionStartTime = GetTime()
     sessionGold = 0
+    sessionJobs = 0
+    sessionBoxes = 0
 end
 
 -- Get session gold
 function LockSmith.Statistics:GetSessionGold()
     return sessionGold
+end
+
+-- Get session jobs
+function LockSmith.Statistics:GetSessionJobs()
+    return sessionJobs
+end
+
+-- Get session boxes
+function LockSmith.Statistics:GetSessionBoxes()
+    return sessionBoxes
+end
+
+-- Get session average tip
+function LockSmith.Statistics:GetSessionAverage()
+    if sessionJobs > 0 then
+        return math.floor(sessionGold / sessionJobs)
+    end
+    return 0
 end
 
 -- Track gold received
@@ -106,6 +128,7 @@ function LockSmith.Statistics:TrackGoldReceived(amount, source, boxCounts)
 
     if ShouldCountJob(source) then
         LockSmithDB.stats.totalJobs = LockSmithDB.stats.totalJobs + 1
+        sessionJobs = sessionJobs + 1
     end
 
     if goldReceived > 0 then
@@ -114,6 +137,7 @@ function LockSmith.Statistics:TrackGoldReceived(amount, source, boxCounts)
     end
 
     if totalBoxes > 0 then
+        sessionBoxes = sessionBoxes + totalBoxes
         EnsureBoxStats()
         LockSmithDB.stats.totalBoxes = LockSmithDB.stats.totalBoxes + totalBoxes
         for key, count in pairs(boxCounts) do
@@ -147,6 +171,8 @@ function LockSmith.Statistics:ResetStats()
     LockSmithDB.stats.totalBoxes = 0
     LockSmithDB.stats.boxesOpened = {}
     sessionGold = 0
+    sessionJobs = 0
+    sessionBoxes = 0
     lastJobTimeByPartner = {}
 end
 
@@ -196,17 +222,11 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
                 end
 
                 -- Send thank-you message after 2 second delay
-                if goldReceived > 0 and LockSmith.AutoResponse then
+                if goldReceived > 0 and LockSmith.AutoResponse and LockSmithDB.thankYouWhisper then
                     local partner = pendingTradePartner
                     local gold = goldReceived
-                    local delayFrame = CreateFrame("Frame")
-                    local elapsed = 0
-                    delayFrame:SetScript("OnUpdate", function(self, delta)
-                        elapsed = elapsed + delta
-                        if elapsed >= 2 then
-                            LockSmith.AutoResponse:SendThankYouWhisper(partner, gold)
-                            self:SetScript("OnUpdate", nil)
-                        end
+                    C_Timer.After(2, function()
+                        LockSmith.AutoResponse:SendThankYouWhisper(partner, gold)
                     end)
                 end
             end

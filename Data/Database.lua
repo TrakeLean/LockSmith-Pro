@@ -179,6 +179,8 @@ LockSmith.LockpickKeywords = {
     "lockpick",
     "lock pick",
     "pick lock",
+    "lockbox",
+    "lockboxes",
     "unlock",
     "open box",
     "open junk",
