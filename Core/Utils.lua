@@ -178,12 +178,11 @@ end
 -- Reset marker flag when leaving group
 markerFrame:RegisterEvent("GROUP_LEFT")
 markerFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-markerFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
 
 markerFrame:SetScript("OnEvent", function(self, event)
     if event == "GROUP_LEFT" then
         hasSetMarker = false
-    elseif event == "GROUP_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
+    elseif event == "GROUP_ROSTER_UPDATE" then
         if LockSmith:IsRunning() then
             CheckAndSetMarker()
         end
