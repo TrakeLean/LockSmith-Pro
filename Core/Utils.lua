@@ -139,7 +139,7 @@ end
 
 local hasSetMarker = false
 local markedPlayers = {}  -- Track which players have been marked
-local customerMarkerIcons = {2, 3, 4, 5, 6, 7, 8}  -- Circle, Diamond, Triangle, Moon, Square, Cross, Skull
+local customerMarkerIcons = {3, 7, 4, 5, 6, 2, 8}  -- Diamond, Cross, Triangle, Moon, Square, Circle, Skull
 local nextCustomerIconIndex = 1
 
 local markerFrame = CreateFrame("Frame")
