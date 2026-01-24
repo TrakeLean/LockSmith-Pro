@@ -34,6 +34,13 @@ An automated lockpicking service addon for World of Warcraft Classic/Anniversary
 - **Statistics Dashboard** - View total gold, total jobs, total boxes, average tip, and session earnings
 - **Persistent Stats** - Data saved between game sessions
 
+### Raid Markers
+- **Auto-Mark Self** - Automatically marks yourself with a Star when you create a party (toggleable)
+- **Auto-Mark Customers** - Automatically marks customers with unique raid icons when they join your party (toggleable)
+- **Icon Sequence** - Customers are marked in order: Diamond, Cross, Triangle, Moon, Square, Circle, Skull
+- **Easy to Find** - Makes it simple for customers to locate you and each other in crowded areas
+- **Smart Reset** - Markers reset automatically when you leave the group
+
 ### Minimap Button
 - **Quick Access** - Convenient minimap button for easy access to all features
 - **Draggable** - Position it anywhere around your minimap
@@ -85,6 +92,9 @@ Access via `/locksmith` or through Interface Options -> AddOns -> LockSmith
 
 **Channel Monitoring**
 - Toggle Trade, General, LFG, and Whisper monitoring on/off
+- Toggle sound effects on/off for notification popups
+- Toggle auto-mark self with Star (when party leader)
+- Toggle auto-mark customers with unique raid icons
 
 **Advertisement Settings**
 - Edit your advertisement message
