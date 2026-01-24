@@ -50,6 +50,7 @@ local defaultSettings = {
         totalGold = 0,
         totalJobs = 0,
         lastSessionGold = 0,
+        bestSessionGold = 0,
         totalBoxes = 0,
         boxesOpened = {},
     },
@@ -128,6 +129,9 @@ local function InitializeSavedVariables()
     end
     if type(LockSmithDB.stats.lastSessionGold) ~= "number" then
         LockSmithDB.stats.lastSessionGold = 0
+    end
+    if type(LockSmithDB.stats.bestSessionGold) ~= "number" then
+        LockSmithDB.stats.bestSessionGold = 0
     end
     if type(LockSmithDB.stats.totalBoxes) ~= "number" then
         LockSmithDB.stats.totalBoxes = 0

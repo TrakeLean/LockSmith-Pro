@@ -143,6 +143,7 @@ function LockSmith.Statistics:ResetStats()
     LockSmithDB.stats.totalGold = 0
     LockSmithDB.stats.totalJobs = 0
     LockSmithDB.stats.lastSessionGold = 0
+    LockSmithDB.stats.bestSessionGold = 0
     LockSmithDB.stats.totalBoxes = 0
     LockSmithDB.stats.boxesOpened = {}
     sessionGold = 0
@@ -152,6 +153,11 @@ end
 -- Save session stats
 function LockSmith.Statistics:SaveSessionStats()
     LockSmithDB.stats.lastSessionGold = sessionGold
+
+    -- Update best session if current session is better
+    if sessionGold > (LockSmithDB.stats.bestSessionGold or 0) then
+        LockSmithDB.stats.bestSessionGold = sessionGold
+    end
 end
 
 -- ================================

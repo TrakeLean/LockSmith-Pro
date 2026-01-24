@@ -66,20 +66,16 @@ function LockSmith.Advertisement:NotifyAdReady()
     if self.adReady then return end
 
     self.adReady = true
-    print("|cff00ff00LockSmith:|r Advertisement ready. Click the popup or minimap to send.")
+    print("|cff00ff00LockSmith:|r Advertisement ready. Use the dashboard to send.")
 
-    if LockSmith.UI and LockSmith.UI.ShowAdReadyPopup then
-        LockSmith.UI:ShowAdReadyPopup()
-    end
+    -- No longer show popup - dashboard handles this
 end
 
 function LockSmith.Advertisement:ClearAdReady()
     if not self.adReady then return end
 
     self.adReady = false
-    if LockSmith.UI and LockSmith.UI.HideAdReadyPopup then
-        LockSmith.UI:HideAdReadyPopup()
-    end
+    -- No longer use popup - dashboard handles this
 end
 
 -- Start advertisement timer

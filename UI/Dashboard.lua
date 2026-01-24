@@ -683,9 +683,14 @@ function LockSmith.Dashboard:InitializeStats(content)
     card5:SetSize(180, 70)
     content.statCard5 = card5
 
+    local card6 = LockSmith.Dashboard:CreateStatCard(content, "Best Session", "bestSession")
+    card6:SetPoint("LEFT", card5, "RIGHT", 10, 0)
+    card6:SetSize(180, 70)
+    content.statCard6 = card6
+
     -- Per-box breakdown
     local boxHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    boxHeader:SetPoint("TOPLEFT", card3, "BOTTOMLEFT", 0, -90)
+    boxHeader:SetPoint("TOPLEFT", card5, "BOTTOMLEFT", 0, -90)
     boxHeader:SetText("|cffffcc00Boxes Opened|r")
 
     -- Scrollable box list
@@ -772,7 +777,7 @@ function LockSmith.Dashboard:UpdateStatsTab()
     local content = tabs.stats.content
 
     -- Update stat cards
-    for i = 1, 5 do
+    for i = 1, 6 do
         local card = content["statCard" .. i]
         if card and card.valueText and card.statType then
             local value = ""
@@ -788,6 +793,8 @@ function LockSmith.Dashboard:UpdateStatsTab()
                 value = LockSmith.Utils:FormatGold(LockSmith.Statistics:GetAverageTip())
             elseif statType == "lastSession" then
                 value = LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold or 0)
+            elseif statType == "bestSession" then
+                value = LockSmith.Utils:FormatGold(LockSmithDB.stats.bestSessionGold or 0)
             end
 
             card.valueText:SetText(value)
@@ -871,14 +878,28 @@ function LockSmith.Dashboard:InitializeSettings(content)
     end
 
     -- Helper function to create checkbox
-    local function CreateCheckbox(label, dbKey)
+    local function CreateCheckbox(label, dbKey, nestedTable, nestedKey)
         local checkbox = CreateFrame("CheckButton", nil, scrollChild, "ChatConfigCheckButtonTemplate")
         checkbox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
         _G[checkbox:GetName() .. "Text"]:SetText(label)
-        checkbox:SetChecked(LockSmithDB[dbKey])
-        checkbox:SetScript("OnClick", function(self)
-            LockSmithDB[dbKey] = self:GetChecked()
-        end)
+
+        if nestedTable and nestedKey then
+            -- Nested table value (e.g., LockSmithDB.adChannels.trade)
+            checkbox:SetChecked(LockSmithDB[nestedTable] and LockSmithDB[nestedTable][nestedKey])
+            checkbox:SetScript("OnClick", function(self)
+                if not LockSmithDB[nestedTable] then
+                    LockSmithDB[nestedTable] = {}
+                end
+                LockSmithDB[nestedTable][nestedKey] = self:GetChecked()
+            end)
+        else
+            -- Simple value (e.g., LockSmithDB.monitorTrade)
+            checkbox:SetChecked(LockSmithDB[dbKey])
+            checkbox:SetScript("OnClick", function(self)
+                LockSmithDB[dbKey] = self:GetChecked()
+            end)
+        end
+
         yOffset = yOffset - 25
         return checkbox
     end
@@ -929,10 +950,10 @@ function LockSmith.Dashboard:InitializeSettings(content)
     adChannelLabel:SetText("Send Advertisement To:")
     yOffset = yOffset - 20
 
-    CreateCheckbox("Trade", "adTrade")
-    CreateCheckbox("General", "adGeneral")
-    CreateCheckbox("LFG", "adLFG")
-    CreateCheckbox("Yell", "adYell")
+    CreateCheckbox("Trade", nil, "adChannels", "trade")
+    CreateCheckbox("General", nil, "adChannels", "general")
+    CreateCheckbox("LFG", nil, "adChannels", "lfg")
+    CreateCheckbox("Yell", nil, "adChannels", "yell")
     yOffset = yOffset - 5
 
     local timerCheckbox = CreateCheckbox("Enable Auto-Advertisement Timer", "adTimerEnabled")
