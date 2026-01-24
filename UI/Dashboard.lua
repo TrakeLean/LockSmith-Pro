@@ -611,10 +611,197 @@ function LockSmith.Dashboard:AnimateNewJob(card)
     end)
 end
 
+-- ================================
+-- Stats Tab
+-- ================================
+
 function LockSmith.Dashboard:InitializeStats(content)
-    local text = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    text:SetPoint("CENTER")
-    text:SetText("Stats - Coming Soon")
+    -- Main stats cards
+    local card1 = LockSmith.Dashboard:CreateStatCard(content, "Total Gold", "totalGold")
+    card1:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
+    card1:SetSize(180, 70)
+    content.statCard1 = card1
+
+    local card2 = LockSmith.Dashboard:CreateStatCard(content, "Total Jobs", "totalJobs")
+    card2:SetPoint("LEFT", card1, "RIGHT", 10, 0)
+    card2:SetSize(180, 70)
+    content.statCard2 = card2
+
+    local card3 = LockSmith.Dashboard:CreateStatCard(content, "Total Boxes", "totalBoxes")
+    card3:SetPoint("TOPLEFT", card1, "BOTTOMLEFT", 0, -10)
+    card3:SetSize(180, 70)
+    content.statCard3 = card3
+
+    local card4 = LockSmith.Dashboard:CreateStatCard(content, "Average Tip", "avgTip")
+    card4:SetPoint("LEFT", card3, "RIGHT", 10, 0)
+    card4:SetSize(180, 70)
+    content.statCard4 = card4
+
+    local card5 = LockSmith.Dashboard:CreateStatCard(content, "Last Session", "lastSession")
+    card5:SetPoint("TOPLEFT", card3, "BOTTOMLEFT", 0, -10)
+    card5:SetSize(180, 70)
+    content.statCard5 = card5
+
+    -- Per-box breakdown
+    local boxHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    boxHeader:SetPoint("TOPLEFT", card3, "BOTTOMLEFT", 0, -90)
+    boxHeader:SetText("|cffffcc00Boxes Opened|r")
+
+    -- Scrollable box list
+    local boxScrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
+    boxScrollFrame:SetPoint("TOPLEFT", boxHeader, "BOTTOMLEFT", 0, -10)
+    boxScrollFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -30, 50)
+
+    local boxContentFrame = CreateFrame("Frame", nil, boxScrollFrame)
+    boxContentFrame:SetSize(boxScrollFrame:GetWidth(), 1)
+    boxScrollFrame:SetScrollChild(boxContentFrame)
+    content.boxContentFrame = boxContentFrame
+
+    -- Reset button
+    local resetBtn = CreateFrame("Button", nil, content, "GameMenuButtonTemplate")
+    resetBtn:SetSize(150, 30)
+    resetBtn:SetPoint("BOTTOM", content, "BOTTOM", 0, 10)
+    resetBtn:SetText("Reset Stats")
+    resetBtn:SetScript("OnClick", function()
+        StaticPopupDialogs["LOCKSMITH_RESET_STATS"] = {
+            text = "Are you sure you want to reset all statistics? This cannot be undone!",
+            button1 = "Yes, Reset",
+            button2 = "Cancel",
+            OnAccept = function()
+                LockSmith.Statistics:ResetStats()
+                LockSmith.Dashboard:UpdateStatsTab()
+                print("|cff00ff00LockSmith:|r Statistics reset!")
+            end,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        }
+        StaticPopup_Show("LOCKSMITH_RESET_STATS")
+    end)
+
+    -- Initial update
+    LockSmith.Dashboard:UpdateStatsTab()
+
+    -- Set up update ticker for skill level (every 5 seconds when tab visible)
+    tabs.stats.onShow = function()
+        LockSmith.Dashboard:UpdateStatsTab()
+        if not tabs.stats.ticker then
+            tabs.stats.ticker = C_Timer.NewTicker(5, function()
+                if currentTab == "stats" then
+                    -- Update skill level in stat cards
+                    LockSmith.Dashboard:UpdateStatsTab()
+                end
+            end)
+        end
+    end
+end
+
+-- Create a stat card
+function LockSmith.Dashboard:CreateStatCard(parent, title, statType)
+    local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    card:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    card:SetBackdropColor(0.15, 0.05, 0.05, 1)
+    card:SetBackdropBorderColor(0.6, 0.2, 0.2, 1)
+
+    -- Title
+    local titleText = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    titleText:SetPoint("TOP", card, "TOP", 0, -8)
+    titleText:SetText("|cffcccccc" .. title .. "|r")
+
+    -- Value
+    local valueText = card:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    valueText:SetPoint("CENTER", card, "CENTER", 0, -5)
+    valueText:SetText("0")
+    card.valueText = valueText
+    card.statType = statType
+
+    return card
+end
+
+-- Update stats tab
+function LockSmith.Dashboard:UpdateStatsTab()
+    if not tabs.stats or not tabs.stats.content then return end
+
+    local content = tabs.stats.content
+
+    -- Update stat cards
+    for i = 1, 5 do
+        local card = content["statCard" .. i]
+        if card and card.valueText and card.statType then
+            local value = ""
+            local statType = card.statType
+
+            if statType == "totalGold" then
+                value = LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold or 0)
+            elseif statType == "totalJobs" then
+                value = tostring(LockSmithDB.stats.totalJobs or 0)
+            elseif statType == "totalBoxes" then
+                value = tostring(LockSmithDB.stats.totalBoxes or 0)
+            elseif statType == "avgTip" then
+                value = LockSmith.Utils:FormatGold(LockSmith.Statistics:GetAverageTip())
+            elseif statType == "lastSession" then
+                value = LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold or 0)
+            end
+
+            card.valueText:SetText(value)
+        end
+    end
+
+    -- Update per-box stats
+    LockSmith.Dashboard:UpdateBoxStats()
+end
+
+-- Update box stats list
+function LockSmith.Dashboard:UpdateBoxStats()
+    if not tabs.stats or not tabs.stats.content then return end
+
+    local boxContentFrame = tabs.stats.content.boxContentFrame
+    if not boxContentFrame then return end
+
+    -- Clear existing
+    for _, child in ipairs({boxContentFrame:GetChildren()}) do
+        child:Hide()
+        child:SetParent(nil)
+    end
+
+    local yOffset = -5
+    local lineHeight = 20
+    local counts = LockSmithDB.stats.boxesOpened or {}
+
+    -- Get sorted box list
+    local boxList = {}
+    for key, count in pairs(counts) do
+        if count > 0 then
+            table.insert(boxList, {key = key, count = count})
+        end
+    end
+
+    -- Sort by count descending
+    table.sort(boxList, function(a, b) return a.count > b.count end)
+
+    -- Create text lines
+    for _, boxData in ipairs(boxList) do
+        local data = LockSmith.BoxDatabase[boxData.key]
+        local skill = data and data.skill or 0
+        local name = data and data.name or boxData.key
+        local label = (skill > 0 and ("|cffffcc00" .. skill .. "|r - ") or "") .. name
+
+        local line = boxContentFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        line:SetPoint("TOPLEFT", boxContentFrame, "TOPLEFT", 10, yOffset)
+        line:SetText(label .. ": |cff00ff00" .. boxData.count .. "|r")
+
+        yOffset = yOffset - lineHeight
+    end
+
+    -- Update content height
+    local totalHeight = math.max(1, #boxList * lineHeight + 10)
+    boxContentFrame:SetHeight(totalHeight)
 end
 
 function LockSmith.Dashboard:InitializeSettings(content)
