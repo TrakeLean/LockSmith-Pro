@@ -863,8 +863,12 @@ function LockSmith.Dashboard:InitializeSettings(content)
     scrollFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -30, 5)
 
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-    scrollChild:SetSize(360, 1000) -- Fixed width to match content area
+    scrollChild:SetWidth(350) -- Set width explicitly
+    scrollChild:SetHeight(1200) -- Will be updated at end
     scrollFrame:SetScrollChild(scrollChild)
+
+    -- Ensure visibility
+    scrollChild:Show()
 
     local yOffset = -10
 
@@ -879,9 +883,14 @@ function LockSmith.Dashboard:InitializeSettings(content)
 
     -- Helper function to create checkbox
     local function CreateCheckbox(label, dbKey, nestedTable, nestedKey)
-        local checkbox = CreateFrame("CheckButton", nil, scrollChild, "ChatConfigCheckButtonTemplate")
+        local checkbox = CreateFrame("CheckButton", "LockSmithSettingsCB" .. math.random(1000000), scrollChild, "ChatConfigCheckButtonTemplate")
         checkbox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
-        _G[checkbox:GetName() .. "Text"]:SetText(label)
+
+        -- Set text (checkbox template creates a Text fontstring)
+        local textWidget = _G[checkbox:GetName() .. "Text"]
+        if textWidget then
+            textWidget:SetText(label)
+        end
 
         if nestedTable and nestedKey then
             -- Nested table value (e.g., LockSmithDB.adChannels.trade)
