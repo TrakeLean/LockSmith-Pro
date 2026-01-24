@@ -155,15 +155,6 @@ function LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelNa
     -- Check if sender was a recent trade partner (skip popup if they just traded with us)
     if WasRecentTradePartner(sender) then return end
 
-    -- Skip messages that are advertisements from other rogues
-    local lowerMsg = string.lower(message)
-    if string.find(lowerMsg, "rogue opening", 1, true) or
-       string.find(lowerMsg, "opening lockbox", 1, true) or
-       string.find(lowerMsg, "lockpicking service", 1, true) or
-       string.find(lowerMsg, "locksmith", 1, true) then
-        return
-    end
-
     -- Check if message has lockpicking keywords
     local hasKeyword = LockSmith:HasLockpickKeyword(message)
     if not hasKeyword and not allowNonKeyword then return end
