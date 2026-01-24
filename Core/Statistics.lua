@@ -184,6 +184,11 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
                     LockSmith.ChatMonitor:TrackTradePartner(pendingTradePartner)
                 end
 
+                -- Update dashboard stats
+                if LockSmith.Dashboard then
+                    LockSmith.Dashboard:UpdateJobBoardStatus()
+                end
+
                 -- Send thank-you message after 2 second delay
                 if goldReceived > 0 and LockSmith.AutoResponse then
                     local partner = pendingTradePartner

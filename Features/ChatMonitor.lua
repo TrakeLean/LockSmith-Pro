@@ -169,8 +169,13 @@ function LockSmith.ChatMonitor:ProcessLockpickRequest(message, sender, channelNa
         -- Send low skill whisper if enabled
         LockSmith.AutoResponse:HandleInsufficientSkill(sender, boxData)
     else
-        -- Show notification popup
-        LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requiredSkill, message)
+        -- Add to dashboard job board
+        if LockSmith.Dashboard then
+            LockSmith.Dashboard:AddJob(sender, message, boxData, channelName, requiredSkill)
+        else
+            -- Fallback to popup if dashboard not available
+            LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requiredSkill, message)
+        end
     end
 end
 

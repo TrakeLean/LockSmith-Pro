@@ -295,11 +295,320 @@ function LockSmith.Dashboard:IsShown()
     return mainFrame and mainFrame:IsShown()
 end
 
--- Placeholder functions (will be implemented next)
+-- ================================
+-- Job Board Tab
+-- ================================
+
+local jobList = {} -- Active job requests
+local jobFrames = {} -- UI frames for each job
+local jobScrollFrame = nil
+local jobContentFrame = nil
+
 function LockSmith.Dashboard:InitializeJobBoard(content)
-    local text = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    text:SetPoint("CENTER")
-    text:SetText("Job Board - Coming Soon")
+    -- Status bar at top
+    local statusBar = CreateFrame("Frame", nil, content, "BackdropTemplate")
+    statusBar:SetHeight(40)
+    statusBar:SetPoint("TOPLEFT", content, "TOPLEFT", 5, -5)
+    statusBar:SetPoint("TOPRIGHT", content, "TOPRIGHT", -5, -5)
+    statusBar:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    statusBar:SetBackdropColor(0.15, 0.05, 0.05, 1)
+    statusBar:SetBackdropBorderColor(0.4, 0.15, 0.15, 1)
+
+    -- Status text
+    local statusText = statusBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    statusText:SetPoint("LEFT", statusBar, "LEFT", 10, 0)
+    statusText:SetText("|cffff0000Stopped|r")
+    content.statusText = statusText
+
+    -- Skill text
+    local skillText = statusBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    skillText:SetPoint("CENTER", statusBar, "CENTER", 0, 0)
+    skillText:SetText("Skill: --/--")
+    content.skillText = skillText
+
+    -- Start/Stop button
+    local startStopBtn = CreateFrame("Button", nil, statusBar, "GameMenuButtonTemplate")
+    startStopBtn:SetSize(80, 25)
+    startStopBtn:SetPoint("RIGHT", statusBar, "RIGHT", -10, 0)
+    startStopBtn:SetText("Start")
+    startStopBtn:SetScript("OnClick", function()
+        LockSmith:Toggle()
+        LockSmith.Dashboard:UpdateJobBoardStatus()
+    end)
+    content.startStopBtn = startStopBtn
+
+    -- Scrollable job list
+    jobScrollFrame = CreateFrame("ScrollFrame", "LockSmithJobScrollFrame", content, "UIPanelScrollFrameTemplate")
+    jobScrollFrame:SetPoint("TOPLEFT", statusBar, "BOTTOMLEFT", 0, -10)
+    jobScrollFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -30, 120)
+
+    jobContentFrame = CreateFrame("Frame", nil, jobScrollFrame)
+    jobContentFrame:SetSize(jobScrollFrame:GetWidth(), 1) -- Height will grow dynamically
+    jobScrollFrame:SetScrollChild(jobContentFrame)
+
+    -- Session stats footer
+    local statsFooter = CreateFrame("Frame", nil, content, "BackdropTemplate")
+    statsFooter:SetHeight(50)
+    statsFooter:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 5, 65)
+    statsFooter:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -5, 65)
+    statsFooter:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    statsFooter:SetBackdropColor(0.15, 0.05, 0.05, 1)
+    statsFooter:SetBackdropBorderColor(0.4, 0.15, 0.15, 1)
+
+    local statsTitle = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    statsTitle:SetPoint("TOPLEFT", statsFooter, "TOPLEFT", 10, -5)
+    statsTitle:SetText("|cffffcc00SESSION STATS|r")
+
+    local statsText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    statsText:SetPoint("LEFT", statsFooter, "LEFT", 10, -10)
+    statsText:SetText("Gold: 0g | Jobs: 0 | Avg: 0g")
+    content.statsText = statsText
+
+    -- Ad buttons
+    local adButtonFrame = CreateFrame("Frame", nil, content)
+    adButtonFrame:SetHeight(55)
+    adButtonFrame:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 5, 5)
+    adButtonFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -5, 5)
+
+    -- Send Ad button (with countdown)
+    local sendAdBtn = CreateFrame("Button", nil, adButtonFrame, "GameMenuButtonTemplate")
+    sendAdBtn:SetSize(180, 30)
+    sendAdBtn:SetPoint("LEFT", adButtonFrame, "LEFT", 5, 0)
+    sendAdBtn:SetText("Send Ad")
+    sendAdBtn:SetScript("OnClick", function()
+        if LockSmith.Advertisement then
+            LockSmith.Advertisement:SendAdvertisement()
+        end
+    end)
+    content.sendAdBtn = sendAdBtn
+
+    -- Yell Ad button
+    local yellAdBtn = CreateFrame("Button", nil, adButtonFrame, "GameMenuButtonTemplate")
+    yellAdBtn:SetSize(180, 30)
+    yellAdBtn:SetPoint("RIGHT", adButtonFrame, "RIGHT", -5, 0)
+    yellAdBtn:SetText("Yell Ad")
+    yellAdBtn:SetScript("OnClick", function()
+        if LockSmith.Advertisement and LockSmithDB.adMessage then
+            SendChatMessage(LockSmithDB.adMessage, "YELL")
+            print("|cff00ff00LockSmith:|r Ad sent to Yell")
+        end
+    end)
+
+    -- Update status initially
+    LockSmith.Dashboard:UpdateJobBoardStatus()
+end
+
+-- Update status bar
+function LockSmith.Dashboard:UpdateJobBoardStatus()
+    if not tabs.jobboard or not tabs.jobboard.content then return end
+
+    local content = tabs.jobboard.content
+    local isRunning = LockSmith:IsRunning()
+
+    -- Status text
+    if content.statusText then
+        if isRunning then
+            content.statusText:SetText("|cff00ff00Running|r")
+        else
+            content.statusText:SetText("|cffff0000Stopped|r")
+        end
+    end
+
+    -- Skill text
+    if content.skillText then
+        local skill, maxSkill = LockSmith.Skills:GetCachedSkill()
+        content.skillText:SetText("Skill: " .. skill .. "/" .. maxSkill)
+    end
+
+    -- Start/Stop button
+    if content.startStopBtn then
+        content.startStopBtn:SetText(isRunning and "Stop" or "Start")
+    end
+
+    -- Session stats
+    if content.statsText then
+        local sessionGold = LockSmith.Statistics:GetSessionGold()
+        local totalJobs = LockSmithDB.stats.totalJobs or 0
+        local avgTip = LockSmith.Statistics:GetAverageTip()
+
+        content.statsText:SetText(
+            "Gold: " .. LockSmith.Utils:FormatGold(sessionGold) ..
+            " | Jobs: " .. totalJobs ..
+            " | Avg: " .. LockSmith.Utils:FormatGold(avgTip)
+        )
+    end
+end
+
+-- Add a job to the board
+function LockSmith.Dashboard:AddJob(sender, message, boxData, channelName, requiredSkill)
+    -- Create job data
+    local job = {
+        sender = sender,
+        message = message,
+        boxData = boxData,
+        channelName = channelName,
+        requiredSkill = requiredSkill,
+        timestamp = GetTime()
+    }
+
+    -- Add to list (newest first)
+    table.insert(jobList, 1, job)
+
+    -- Rebuild job list UI
+    LockSmith.Dashboard:RebuildJobList()
+
+    -- Play sound and visual alert
+    if LockSmithDB.playSoundEffects then
+        PlaySound(SOUNDKIT and SOUNDKIT.TELL_MESSAGE or "TellMessage", "Master")
+    end
+end
+
+-- Clear all jobs
+function LockSmith.Dashboard:ClearAllJobs()
+    jobList = {}
+    LockSmith.Dashboard:RebuildJobList()
+end
+
+-- Remove a specific job
+function LockSmith.Dashboard:RemoveJob(index)
+    table.remove(jobList, index)
+    LockSmith.Dashboard:RebuildJobList()
+end
+
+-- Rebuild the job list UI
+function LockSmith.Dashboard:RebuildJobList()
+    -- Clear existing job frames
+    for _, frame in ipairs(jobFrames) do
+        frame:Hide()
+        frame:SetParent(nil)
+    end
+    jobFrames = {}
+
+    if not jobContentFrame then return end
+
+    local yOffset = -5
+    local cardHeight = 95
+    local cardSpacing = 10
+
+    for i, job in ipairs(jobList) do
+        local card = LockSmith.Dashboard:CreateJobCard(job, i)
+        card:SetPoint("TOPLEFT", jobContentFrame, "TOPLEFT", 5, yOffset)
+        card:SetPoint("TOPRIGHT", jobContentFrame, "TOPRIGHT", -5, yOffset)
+
+        -- Highlight if new (within 2 seconds)
+        if GetTime() - job.timestamp < 2 then
+            LockSmith.Dashboard:AnimateNewJob(card)
+        end
+
+        table.insert(jobFrames, card)
+        yOffset = yOffset - cardHeight - cardSpacing
+    end
+
+    -- Update content height for scrolling
+    local totalHeight = math.max(1, #jobList * (cardHeight + cardSpacing) + 10)
+    jobContentFrame:SetHeight(totalHeight)
+end
+
+-- Create a job card
+function LockSmith.Dashboard:CreateJobCard(job, index)
+    local card = CreateFrame("Frame", nil, jobContentFrame, "BackdropTemplate")
+    card:SetHeight(95)
+    card:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    card:SetBackdropColor(0.2, 0.1, 0.1, 0.95)
+    card:SetBackdropBorderColor(0.5, 0.2, 0.2, 1)
+
+    -- Player name
+    local playerName = card:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    playerName:SetPoint("TOPLEFT", card, "TOPLEFT", 10, -8)
+    playerName:SetText("|cff" .. (job.channelName == "WHISPER" and "ff69b4" or "ffcc00") .. job.sender .. "|r")
+
+    -- Channel
+    local channel = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    channel:SetPoint("TOPRIGHT", card, "TOPRIGHT", -10, -8)
+    channel:SetText(job.channelName or "Unknown")
+
+    -- Message
+    local msg = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    msg:SetPoint("TOPLEFT", playerName, "BOTTOMLEFT", 0, -5)
+    msg:SetPoint("TOPRIGHT", card, "TOPRIGHT", -10, -25)
+    msg:SetHeight(20)
+    msg:SetJustifyH("LEFT")
+    msg:SetWordWrap(false)
+    msg:SetText("\"" .. (job.message or "") .. "\"")
+
+    -- Box info
+    local boxInfo = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    boxInfo:SetPoint("TOPLEFT", msg, "BOTTOMLEFT", 0, -5)
+    if job.boxData then
+        boxInfo:SetText("|cff00ff00Box:|r " .. job.boxData.name .. " (|cffffcc00" .. job.requiredSkill .. " skill|r)")
+    else
+        boxInfo:SetText("|cffccccccBox: Unknown|r")
+    end
+
+    -- Buttons
+    local inviteBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
+    inviteBtn:SetSize(90, 25)
+    inviteBtn:SetPoint("BOTTOMLEFT", card, "BOTTOMLEFT", 10, 8)
+    inviteBtn:SetText("Invite")
+    inviteBtn:SetScript("OnClick", function()
+        if LockSmith.Utils then
+            LockSmith.Utils:InvitePlayer(job.sender)
+        end
+    end)
+
+    local whisperBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
+    whisperBtn:SetSize(90, 25)
+    whisperBtn:SetPoint("LEFT", inviteBtn, "RIGHT", 5, 0)
+    whisperBtn:SetText("Whisper")
+    whisperBtn:SetScript("OnClick", function()
+        ChatFrame_SendTell(job.sender)
+    end)
+
+    local ignoreBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
+    ignoreBtn:SetSize(90, 25)
+    ignoreBtn:SetPoint("LEFT", whisperBtn, "RIGHT", 5, 0)
+    ignoreBtn:SetText("Ignore")
+    ignoreBtn:SetScript("OnClick", function()
+        if LockSmith.ChatMonitor then
+            LockSmith.ChatMonitor:AddSessionIgnore(job.sender)
+        end
+        LockSmith.Dashboard:RemoveJob(index)
+    end)
+
+    return card
+end
+
+-- Animate new job card
+function LockSmith.Dashboard:AnimateNewJob(card)
+    -- Flash border
+    local flashCount = 0
+    local flashFrame = CreateFrame("Frame")
+    flashFrame:SetScript("OnUpdate", function(self, elapsed)
+        flashCount = flashCount + elapsed * 4 -- 4 flashes per second
+
+        if flashCount < 4 then -- Flash for 1 second
+            local alpha = (math.sin(flashCount * math.pi) + 1) / 2
+            card:SetBackdropBorderColor(1, 0.5 + alpha * 0.5, 0, 1)
+        else
+            card:SetBackdropBorderColor(0.5, 0.2, 0.2, 1) -- Reset to normal
+            self:SetScript("OnUpdate", nil)
+        end
+    end)
 end
 
 function LockSmith.Dashboard:InitializeStats(content)
