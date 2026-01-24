@@ -6,6 +6,7 @@ LockSmith.ChatMonitor = {}
 
 local sessionIgnoreList = {}
 local lastInviteTime = {}
+local declinedInvites = {}  -- Track people who declined invites this session
 local INVITE_THROTTLE = 30
 local recentTradePartners = {}  -- Cache of last 5 people we traded with
 local MAX_RECENT_TRADES = 5
@@ -25,6 +26,13 @@ local function NormalizeSenderName(name)
 end
 
 local function CanInvite(sender)
+    local normalized = NormalizeSenderName(sender)
+
+    -- Don't re-invite if they declined this session
+    if declinedInvites[normalized] then
+        return false
+    end
+
     local now = GetTime()
     local last = lastInviteTime[sender]
     if not last or (now - last) > INVITE_THROTTLE then
@@ -121,6 +129,7 @@ end
 
 function LockSmith.ChatMonitor:ClearSessionIgnore()
     sessionIgnoreList = {}
+    declinedInvites = {}
 end
 
 function LockSmith.ChatMonitor:IsSessionIgnored(sender)
@@ -233,8 +242,30 @@ function LockSmith.ChatMonitor:RegisterEvents()
     local eventFrame = CreateFrame("Frame", "LockSmithChatMonitorFrame")
     eventFrame:RegisterEvent("CHAT_MSG_CHANNEL")
     eventFrame:RegisterEvent("CHAT_MSG_WHISPER")
+    eventFrame:RegisterEvent("PARTY_INVITE_REQUEST")
+    eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+
+    local pendingInvite = nil
 
     eventFrame:SetScript("OnEvent", function(self, event, ...)
-        OnChatMessage(event, ...)
+        if event == "CHAT_MSG_CHANNEL" or event == "CHAT_MSG_WHISPER" then
+            OnChatMessage(event, ...)
+        elseif event == "PARTY_INVITE_REQUEST" then
+            -- Track who we invited
+            local inviter = ...
+            if inviter then
+                pendingInvite = NormalizeSenderName(inviter)
+            end
+        elseif event == "GROUP_ROSTER_UPDATE" then
+            -- Check if pending invite was accepted or declined
+            if pendingInvite then
+                local isInGroup = IsGroupMember(pendingInvite)
+                if not isInGroup then
+                    -- Invite was declined (not in group after roster update)
+                    declinedInvites[pendingInvite] = true
+                end
+                pendingInvite = nil
+            end
+        end
     end)
 end

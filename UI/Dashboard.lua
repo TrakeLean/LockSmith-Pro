@@ -707,11 +707,10 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
         boxInfo:SetText("|cffccccccBox: Unknown|r")
     end
 
-    -- Buttons (responsive width - spread evenly across card)
+    -- Buttons (responsive width - use anchors to distribute evenly)
+    -- Each button gets equal width by anchoring both left and right edges
     local inviteBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
     inviteBtn:SetHeight(22)
-    inviteBtn:SetPoint("TOPLEFT", boxInfo, "BOTTOMLEFT", -2, -6)
-    inviteBtn:SetPoint("RIGHT", card, "LEFT", (card:GetWidth() or 300) / 3 - 4, 0)
     inviteBtn:SetText("Invite")
     inviteBtn:SetScript("OnClick", function()
         if LockSmith.Utils then
@@ -721,8 +720,6 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
 
     local whisperBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
     whisperBtn:SetHeight(22)
-    whisperBtn:SetPoint("LEFT", inviteBtn, "RIGHT", 4, 0)
-    whisperBtn:SetPoint("RIGHT", card, "CENTER", (card:GetWidth() or 300) / 6 - 2, 0)
     whisperBtn:SetText("Whisper")
     whisperBtn:SetScript("OnClick", function()
         ChatFrame_SendTell(job.sender)
@@ -730,8 +727,6 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
 
     local ignoreBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
     ignoreBtn:SetHeight(22)
-    ignoreBtn:SetPoint("LEFT", whisperBtn, "RIGHT", 4, 0)
-    ignoreBtn:SetPoint("RIGHT", card, "RIGHT", -10, 0)
     ignoreBtn:SetText("Ignore")
     ignoreBtn:SetScript("OnClick", function()
         if LockSmith.ChatMonitor and LockSmith.ChatMonitor.AddToSessionIgnore then
@@ -740,10 +735,30 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
         LockSmith.Dashboard:RemoveJob(index)
     end)
 
-    -- Calculate total card height dynamically
+    -- Calculate total card height dynamically FIRST
     -- Top padding (8) + playerName height (~14) + spacing (4) + message height + spacing (4) + boxInfo height (~14) + spacing (6) + button height (22) + bottom padding (6)
     local totalHeight = 8 + 14 + 4 + msgHeight + 4 + 14 + 6 + 22 + 6
     card:SetHeight(math.max(95, totalHeight)) -- Minimum 95 to match original
+
+    -- Get card width from parent (jobContentFrame width - the 10px margins from anchoring)
+    local cardWidth = (jobContentFrame and jobContentFrame:GetWidth() or 400) - 10
+
+    -- Calculate button widths: (cardWidth - left margin - right margin - 2 gaps) / 3
+    local leftMargin = 10
+    local rightMargin = 10
+    local gapSize = 4
+    local availableWidth = cardWidth - leftMargin - rightMargin - (gapSize * 2)
+    local buttonWidth = math.floor(availableWidth / 3)
+
+    -- Set all button widths
+    inviteBtn:SetWidth(buttonWidth)
+    whisperBtn:SetWidth(buttonWidth)
+    ignoreBtn:SetWidth(buttonWidth)
+
+    -- Position buttons at the bottom in a row
+    inviteBtn:SetPoint("BOTTOMLEFT", card, "BOTTOMLEFT", leftMargin, 6)
+    whisperBtn:SetPoint("LEFT", inviteBtn, "RIGHT", gapSize, 0)
+    ignoreBtn:SetPoint("LEFT", whisperBtn, "RIGHT", gapSize, 0)
 
     return card
 end
@@ -1004,11 +1019,13 @@ function LockSmith.Dashboard:UpdateStatsLayout(width, _)
     end
 
     -- Calculate how many columns can fit based on width
-    -- Min card width: 150px, spacing between cards: 10px, margins: 20px total
+    -- We need to work with the scroll child's actual width (which accounts for scrollbar)
+    local scrollChildWidth = scrollChild:GetWidth() or (width - 30)
     local minCardWidth = 150
     local cardSpacing = 10
-    local margins = 40 -- left + right margins
-    local availableWidth = width - margins
+    local leftMargin = 10
+    local rightMargin = 10
+    local availableWidth = scrollChildWidth - leftMargin - rightMargin
 
     local numColumns = 1
     if availableWidth >= (minCardWidth * 3 + cardSpacing * 2) then
@@ -1049,7 +1066,7 @@ function LockSmith.Dashboard:UpdateStatsLayout(width, _)
 
             -- Set width (or use anchors for single column mode)
             if numColumns == 1 then
-                card:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -30, row == 0 and -10 or 0)
+                card:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -rightMargin, row == 0 and -10 or 0)
             else
                 card:SetWidth(cardWidth)
             end

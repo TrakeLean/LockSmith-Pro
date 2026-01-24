@@ -193,6 +193,16 @@ LockSmith.LockpickKeywords = {
     "can someone pick",
     "anyone pick",
     "need a rogue",
+    "need rogue",
+    "lf rogue",
+    "lf rouge", -- Common misspelling
+    "lfm rogue",
+    "lfm rouge", -- Common misspelling
+    "looking for rogue",
+    "looking for rouge", -- Common misspelling
+    "want rogue",
+    "need schurke", -- German for rogue
+    "suche schurke", -- German "looking for rogue"
 }
 
 -- Function to identify box type from message
@@ -200,6 +210,16 @@ function LockSmith:IdentifyBoxType(message)
     if type(message) ~= "string" then
         return nil
     end
+
+    -- First, check for item links (works for all languages!)
+    -- Item links look like: |cffffffff|Hitem:16882:0:0:0:0:0:0:0|h[Battered Junkbox]|h|r
+    local itemID = tonumber(string.match(message, "|Hitem:(%d+)"))
+    if itemID and self.BoxDatabaseById and self.BoxDatabaseById[itemID] then
+        local key = self.BoxDatabaseById[itemID]
+        return self.BoxDatabase[key]
+    end
+
+    -- If no item link found, fall back to text matching
     local lowerMsg = string.lower(message)
 
     -- Use only boxes relevant to current expansion
