@@ -204,33 +204,61 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
         local playerAccepted, targetAccepted = ...
 
         if playerAccepted == 1 and targetAccepted == 1 and not tradeCompleted then
-            -- Both accepted - trade will complete
-            local goldReceived = GetTargetTradeMoney() or 0
-            local totalBoxes, boxCounts = CountTradeBoxes()
+            tradeCompleted = true
 
-            if LockSmith:IsRunning() and (goldReceived > 0 or totalBoxes > 0) then
-                LockSmith.Statistics:TrackGoldReceived(goldReceived, pendingTradePartner, boxCounts)
+            -- Store partner name before trade window closes
+            local partner = pendingTradePartner
 
-                -- Track trade partner to prevent popup on "ty" whispers
-                if LockSmith.ChatMonitor and LockSmith.ChatMonitor.TrackTradePartner and pendingTradePartner then
-                    LockSmith.ChatMonitor:TrackTradePartner(pendingTradePartner)
-                end
+            -- Wait a tiny bit to ensure trade data is fully available
+            -- This helps with fast trades where items might not be fully visible yet
+            if C_Timer and C_Timer.After then
+                C_Timer.After(0.1, function()
+                    local goldReceived = GetTargetTradeMoney() or 0
+                    local totalBoxes, boxCounts = CountTradeBoxes()
 
-                -- Update dashboard stats
-                if LockSmith.Dashboard then
-                    LockSmith.Dashboard:UpdateJobBoardStatus()
-                end
+                    if LockSmith:IsRunning() and (goldReceived > 0 or totalBoxes > 0) then
+                        LockSmith.Statistics:TrackGoldReceived(goldReceived, partner, boxCounts)
 
-                -- Send thank-you message after 2 second delay
-                if goldReceived > 0 and LockSmith.AutoResponse and LockSmithDB.thankYouWhisper then
-                    local partner = pendingTradePartner
-                    local gold = goldReceived
-                    C_Timer.After(2, function()
-                        LockSmith.AutoResponse:SendThankYouWhisper(partner, gold)
-                    end)
+                        -- Track trade partner to prevent popup on "ty" whispers
+                        if LockSmith.ChatMonitor and LockSmith.ChatMonitor.TrackTradePartner and partner then
+                            LockSmith.ChatMonitor:TrackTradePartner(partner)
+                        end
+
+                        -- Update dashboard stats
+                        if LockSmith.Dashboard then
+                            LockSmith.Dashboard:UpdateJobBoardStatus()
+                        end
+
+                        -- Send thank-you message after 2 second delay
+                        if goldReceived > 0 and LockSmith.AutoResponse and LockSmithDB.thankYouWhisper then
+                            local gold = goldReceived
+                            C_Timer.After(2, function()
+                                LockSmith.AutoResponse:SendThankYouWhisper(partner, gold)
+                            end)
+                        end
+                    end
+                end)
+            else
+                -- Fallback for clients without C_Timer (immediate processing)
+                local goldReceived = GetTargetTradeMoney() or 0
+                local totalBoxes, boxCounts = CountTradeBoxes()
+
+                if LockSmith:IsRunning() and (goldReceived > 0 or totalBoxes > 0) then
+                    LockSmith.Statistics:TrackGoldReceived(goldReceived, partner, boxCounts)
+
+                    if LockSmith.ChatMonitor and LockSmith.ChatMonitor.TrackTradePartner and partner then
+                        LockSmith.ChatMonitor:TrackTradePartner(partner)
+                    end
+
+                    if LockSmith.Dashboard then
+                        LockSmith.Dashboard:UpdateJobBoardStatus()
+                    end
+
+                    if goldReceived > 0 and LockSmith.AutoResponse and LockSmithDB.thankYouWhisper then
+                        LockSmith.AutoResponse:SendThankYouWhisper(partner, goldReceived)
+                    end
                 end
             end
-            tradeCompleted = true
         end
     elseif event == "TRADE_CLOSED" then
         pendingTradePartner = nil
