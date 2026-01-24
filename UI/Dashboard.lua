@@ -217,9 +217,13 @@ local function CreateDashboardFrame()
         SaveWindowPosition()
     end)
 
-    -- Min/max size constraints
-    mainFrame:SetMinResize(MIN_WIDTH, MIN_HEIGHT)
-    mainFrame:SetMaxResize(800, 1000)
+    -- Min/max size constraints (TBC compatibility)
+    if mainFrame.SetResizeBounds then
+        mainFrame:SetResizeBounds(MIN_WIDTH, MIN_HEIGHT, 800, 1000)
+    elseif mainFrame.SetMinResize then
+        mainFrame:SetMinResize(MIN_WIDTH, MIN_HEIGHT)
+        mainFrame:SetMaxResize(800, 1000)
+    end
 
     -- Tab container (holds all tab content)
     local tabContainer = CreateFrame("Frame", "LockSmithTabContainer", mainFrame)
