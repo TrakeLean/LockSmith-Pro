@@ -220,6 +220,26 @@ local function CreateSettingsPanel()
     soundCheckbox:SetScript("OnClick", function(self)
         LockSmithDB.playSoundEffects = self:GetChecked()
     end)
+    yOffset = yOffset - 25
+
+    -- Auto-mark self with star checkbox
+    local autoMarkSelfCheckbox = CreateFrame("CheckButton", "LockSmithAutoMarkSelfCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    autoMarkSelfCheckbox:SetPoint("TOPLEFT", 16, yOffset)
+    _G[autoMarkSelfCheckbox:GetName() .. "Text"]:SetText("Auto-mark Self with Star (Party Leader)")
+    autoMarkSelfCheckbox:SetChecked(LockSmithDB.autoMarkSelf)
+    autoMarkSelfCheckbox:SetScript("OnClick", function(self)
+        LockSmithDB.autoMarkSelf = self:GetChecked()
+    end)
+    yOffset = yOffset - 25
+
+    -- Auto-mark customers checkbox
+    local autoMarkCustomersCheckbox = CreateFrame("CheckButton", "LockSmithAutoMarkCustomersCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    autoMarkCustomersCheckbox:SetPoint("TOPLEFT", 16, yOffset)
+    _G[autoMarkCustomersCheckbox:GetName() .. "Text"]:SetText("Auto-mark Customers with Raid Icons")
+    autoMarkCustomersCheckbox:SetChecked(LockSmithDB.autoMarkCustomers)
+    autoMarkCustomersCheckbox:SetScript("OnClick", function(self)
+        LockSmithDB.autoMarkCustomers = self:GetChecked()
+    end)
     yOffset = yOffset - 35
 
     -- ================================

@@ -41,6 +41,10 @@ local defaultSettings = {
     -- Sound settings
     playSoundEffects = true,
 
+    -- Raid marker settings
+    autoMarkSelf = true,
+    autoMarkCustomers = true,
+
     -- Statistics
     stats = {
         totalGold = 0,
@@ -105,6 +109,12 @@ local function InitializeSavedVariables()
     end
     if LockSmithDB.playSoundEffects == nil then
         LockSmithDB.playSoundEffects = defaultSettings.playSoundEffects
+    end
+    if LockSmithDB.autoMarkSelf == nil then
+        LockSmithDB.autoMarkSelf = defaultSettings.autoMarkSelf
+    end
+    if LockSmithDB.autoMarkCustomers == nil then
+        LockSmithDB.autoMarkCustomers = defaultSettings.autoMarkCustomers
     end
 
     if type(LockSmithDB.stats) ~= "table" then

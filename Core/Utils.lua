@@ -138,20 +138,100 @@ end
 -- ================================
 
 local hasSetMarker = false
+local markedPlayers = {}  -- Track which players have been marked
+local customerMarkerIcons = {2, 3, 4, 5, 6, 7, 8}  -- Circle, Diamond, Triangle, Moon, Square, Cross, Skull
+local nextCustomerIconIndex = 1
+
 local markerFrame = CreateFrame("Frame")
 
 -- Set raid marker on player
 local function SetPlayerRaidMarker()
     -- SetRaidTarget: 1=Star, 2=Circle, 3=Diamond, 4=Triangle, 5=Moon, 6=Square, 7=Cross, 8=Skull
-    if SetRaidTarget then
+    if SetRaidTarget and LockSmithDB and LockSmithDB.autoMarkSelf then
         SetRaidTarget("player", 1)  -- 1 = Star
+    end
+end
+
+-- Get normalized player name
+local function NormalizePlayerName(name)
+    if type(name) ~= "string" then
+        return ""
+    end
+
+    local base = name
+    local dash = string.find(base, "-", 1, true)
+    if dash then
+        base = string.sub(base, 1, dash - 1)
+    end
+
+    return string.lower(base)
+end
+
+-- Set raid marker on a customer
+local function SetCustomerRaidMarker(unitID, playerName)
+    if not SetRaidTarget then return end
+    if not LockSmithDB or not LockSmithDB.autoMarkCustomers then return end
+
+    local normalized = NormalizePlayerName(playerName)
+    if normalized == "" then return end
+
+    -- Don't mark if already marked
+    if markedPlayers[normalized] then return end
+
+    -- Get the next available icon
+    local iconIndex = customerMarkerIcons[nextCustomerIconIndex]
+    if not iconIndex then return end  -- All icons used
+
+    -- Set the marker
+    SetRaidTarget(unitID, iconIndex)
+    markedPlayers[normalized] = iconIndex
+
+    -- Move to next icon for next customer
+    nextCustomerIconIndex = nextCustomerIconIndex + 1
+end
+
+-- Mark all current party/raid members
+local function MarkAllCustomers()
+    if not LockSmithDB or not LockSmithDB.autoMarkCustomers then return end
+
+    local playerName = UnitName("player")
+    local playerNormalized = NormalizePlayerName(playerName)
+
+    -- Check if in raid
+    local inRaid = UnitInRaid("player")
+    if inRaid then
+        local count = GetNumGroupMembers and GetNumGroupMembers() or (GetNumRaidMembers and GetNumRaidMembers() or 0)
+        for i = 1, count do
+            local member = UnitName("raid" .. i)
+            if member then
+                local normalized = NormalizePlayerName(member)
+                if normalized ~= playerNormalized and normalized ~= "" then
+                    SetCustomerRaidMarker("raid" .. i, member)
+                end
+            end
+        end
+    else
+        local count = GetNumSubgroupMembers and GetNumSubgroupMembers() or (GetNumPartyMembers and GetNumPartyMembers() or 0)
+        for i = 1, count do
+            local member = UnitName("party" .. i)
+            if member then
+                local normalized = NormalizePlayerName(member)
+                if normalized ~= playerNormalized and normalized ~= "" then
+                    SetCustomerRaidMarker("party" .. i, member)
+                end
+            end
+        end
     end
 end
 
 -- Check if we should set the marker
 local function CheckAndSetMarker()
     -- Only set marker once per group
-    if hasSetMarker then return end
+    if hasSetMarker then
+        -- Check for new customers to mark
+        MarkAllCustomers()
+        return
+    end
 
     -- Check if we're in a party and are the leader
     local isLeader = UnitIsGroupLeader and UnitIsGroupLeader("player")
@@ -168,6 +248,7 @@ local function CheckAndSetMarker()
             elapsed = elapsed + delta
             if elapsed >= 0.5 then
                 SetPlayerRaidMarker()
+                MarkAllCustomers()
                 hasSetMarker = true
                 self:SetScript("OnUpdate", nil)
             end
@@ -182,6 +263,8 @@ markerFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 markerFrame:SetScript("OnEvent", function(self, event)
     if event == "GROUP_LEFT" then
         hasSetMarker = false
+        markedPlayers = {}
+        nextCustomerIconIndex = 1
     elseif event == "GROUP_ROSTER_UPDATE" then
         if LockSmith:IsRunning() then
             CheckAndSetMarker()
