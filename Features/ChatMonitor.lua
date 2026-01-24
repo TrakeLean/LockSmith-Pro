@@ -161,10 +161,12 @@ local function OnChatMessage(event, ...)
         if type(message) ~= "string" then return end
         if LockSmith.ChatMonitor:IsSelfSender(sender) then return end
 
+        -- Auto-invite if enabled (and skip popup since we're auto-inviting)
         if LockSmithDB.autoInviteWhisper and CanInvite(sender) and not IsGroupMember(sender) then
             if LockSmith.Utils and LockSmith.Utils.InvitePlayer then
                 LockSmith.Utils:InvitePlayer(sender)
             end
+            return  -- Skip popup when auto-inviting
         end
 
         local allowNonKeyword = LockSmithDB.popupOnAnyWhisper
