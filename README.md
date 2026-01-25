@@ -1,163 +1,211 @@
-﻿# LockSmith - Lockpicking Service Addon
+# LockSmithPro - Professional Lockpicking Service Addon
 
-An automated lockpicking service addon for World of Warcraft Classic/Anniversary. Perfect for Rogues who want to offer lockpicking services efficiently!
+![Available on CurseForge](https://img.shields.io/badge/Available_on-CurseForge-6441A4?style=flat&logo=curseforge)
+![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen)
+![WoW Compatibility](https://img.shields.io/badge/WoW-Classic%20Era%20|%20TBC%20|%20Wrath%20|%20Retail-blue)
 
-## Features
+**The ultimate lockpicking business automation addon for World of Warcraft!** Transform your Rogue into a professional locksmith with automatic chat monitoring, smart notifications, comprehensive earnings tracking, and powerful automation tools. Built for maximum efficiency and ease of use across all WoW versions.
 
-### Core Functionality
-- **Automatic Chat Monitoring** - Watches Trade, General, LFG, and Whisper channels for lockpick requests
-- **Smart Box Detection** - Identifies specific junkbox/lockbox types and skill requirements
-- **Expansion Detection** - Automatically detects your WoW version (Classic/TBC/Wrath/Retail) and shows only relevant boxes
-- **Skill Checking** - Only notifies you of requests you can actually fulfill based on your current lockpicking skill
-- **Notification Popups** - Shows player name, message, box type, required skill with action buttons
-- **Session Ignore List** - Temporarily ignore spammy players for the current session (resets when addon stops)
-- **Sound Alerts** - Plays a sound when a valid request is detected
+Available for download at [CurseForge](https://www.curseforge.com/wow/addons/locksmithpro).
 
-### Advertisement System
-- **Customizable Messages** - Edit your advertisement text with support for raid icons ({skull}, {rt1}, etc.) and special characters (♥)
-- **Icon Helper** - Built-in reference showing all available icons you can use in messages
-- **Multi-Channel Broadcasting** - Send ads to Trade, General, LFG, and/or Yell channels
-- **Manual Send** - Click a button to broadcast your ad
-- **Ad Timer** - Shows an "Ad Ready" popup at configurable intervals (30s - 10 minutes) with Send/Stop/Dismiss buttons
+![LockSmithPro Dashboard](https://via.placeholder.com/800x450.png?text=LockSmithPro+Dashboard+Screenshot)
 
-### Auto-Response
-- **Low Skill Whispers** - Automatically whisper players when your skill is too low (toggleable)
-- **Thank-You Whispers** - Optionally whisper after receiving a trade tip (2-second delay for natural timing)
-- **Customizable Messages** - Edit low-skill and thank-you responses with icon support
-- **Variable Support** - Use %CURRENT%, %REQUIRED%, and %TIP% placeholders
-- **Icon Helper** - Shows available icons below message fields
+## 🎲 Core Features
 
-### Tip Tracking
-- **Automatic Gold Detection** - Tracks gold received from trade windows
-- **Box Counting** - Counts boxes traded to you and tracks totals per box type
-- **Job Grouping** - Multiple trades with the same player within 10 minutes count as one job
-- **Statistics Dashboard** - View total gold, total jobs, total boxes, average tip, and session earnings
-- **Persistent Stats** - Data saved between game sessions
+### **🔍 Intelligent Chat Monitoring**
+- **Multi-channel detection** - Automatically monitors Trade, General, LFG, and Whisper channels
+- **Language-independent box detection** - Recognizes lockbox requests regardless of phrasing
+- **Smart skill checking** - Only notifies you of requests you can actually fulfill
+- **Include/exclude keyword filters** - Customize what triggers notifications
+- **Session ignore list** - Temporarily ignore spammy players (resets when addon stops)
+- **Recent trade partner tracking** - Prevents duplicate notifications from the same customer
 
-### Raid Markers
-- **Auto-Mark Self** - Automatically marks yourself with a Star when you create a party (toggleable)
-- **Auto-Mark Customers** - Automatically marks customers with unique raid icons when they join your party (toggleable)
-- **Icon Sequence** - Customers are marked in order: Diamond, Cross, Triangle, Moon, Square, Circle, Skull
-- **Easy to Find** - Makes it simple for customers to locate you and each other in crowded areas
-- **Smart Reset** - Markers reset automatically when you leave the group
+### **📢 Professional Advertisement System**
+- **Customizable messages** - Full support for raid icons ({skull}, {rt1}, etc.) and special characters (♥)
+- **Multi-channel broadcasting** - Send ads to Trade, General, LFG, and/or Yell channels
+- **Automatic timer mode** - Get "Ad Ready" popups at configurable intervals (30s - 10 minutes)
+- **Manual send option** - One-click broadcast whenever you want
+- **Icon helper reference** - Built-in guide showing all available icons and symbols
+- **Spell link support** - Include your lockpicking spell in advertisements
 
-### Minimap Button
-- **Quick Access** - Convenient minimap button for easy access to all features
-- **Draggable** - Position it anywhere around your minimap
-- **Interactive** - Left-click for settings, right-click to start/stop, shift-click to advertise
-- **Informative Tooltip** - Shows current status and lockpicking skill
+### **💬 Automated Response System**
+- **Low skill whispers** - Automatically notify players when your skill is too low (fully toggleable)
+- **Thank-you whispers** - Optional automatic thank-you messages after receiving tips (2-second delay)
+- **Variable substitution** - Use %CURRENT%, %REQUIRED%, and %TIP% placeholders
+- **Customizable messages** - Edit all auto-response text with raid icon support
+- **Smart timing** - Natural message delays to avoid appearing robotic
 
-### Universal Use
-- **Works on Any Class** - Has a Start/Stop button so anyone can run it (though only Rogues can actually pick locks!)
-- **Channel Customization** - Choose which channels to monitor
-- **Spam Protection** - Built-in message throttling to avoid spam
+### **💰 Advanced Earnings Tracking**
+- **Automatic gold detection** - Tracks gold received from trade windows in real-time
+- **Smart box counting** - Tracks both boxes traded to you AND boxes unlocked in-window (slot 7)
+- **In-window unlock tracking** - Counts Pick Lock spell casts during active trades
+- **Job grouping** - Multiple trades with same player within 10 minutes = one job
+- **Session statistics** - Separate tracking for current session vs. all-time
+- **Per-box analytics** - See which box types you open most frequently
+- **Average tip calculation** - Know your typical earnings per job
+- **Persistent data** - All stats saved between game sessions
 
-## Installation
+### **🎯 Smart Raid Markers**
+- **Auto-mark self** - Automatically place Star marker when you create a party
+- **Auto-mark customers** - Assign unique raid icons to customers as they join (Diamond, Cross, Triangle, Moon, Square, Circle, Skull)
+- **Easy location** - Makes finding customers simple in crowded areas
+- **Smart reset** - Markers automatically clear when group disbands
+- **Fully toggleable** - Enable/disable independently for self and customers
+
+### **🎨 Professional Interface**
+- **Persistent dashboard** - Main UI with Job Board, Settings, and Statistics tabs
+- **Notification popups** - Beautiful WoW-style popups with player name, box type, and required skill
+- **Minimap button** - Draggable icon with multiple interaction modes
+  - Left-click: Open settings
+  - Right-click: Start/Stop monitoring
+  - Shift-click: Send advertisement
+- **Informative tooltips** - Shows current status and lockpicking skill
+- **Sound alerts** - Customizable audio notifications for new requests
+
+### **⚙️ Smart Automation**
+- **Works on any class** - Start/Stop button allows anyone to run it (though only Rogues can pick locks!)
+- **Expansion detection** - Automatically detects WoW version and shows only relevant boxes
+- **Spam protection** - Built-in message throttling and invite cooldowns
+- **Channel customization** - Choose which channels to monitor
+- **Cross-version compatibility** - Seamless operation on Classic Era, TBC, Wrath, and Retail
+
+## 🚀 Quick Start
+
+1. Type `/locksmith` or `/ls` to open the dashboard
+2. Click the **Start** button to begin monitoring chat channels
+3. Customize your advertisement message in Settings tab
+4. Click **Send Advertisement** or enable the ad timer for automatic prompts
+5. Accept requests from notification popups and start earning!
+
+## 📥 Installation
+
+### CurseForge (Recommended)
+1. Visit [LockSmithPro on CurseForge](https://www.curseforge.com/wow/addons/locksmithpro)
+2. Download via CurseForge app or manual download
+3. The addon will be automatically installed to the correct location
 
 ### Manual Installation
-1. Download the latest release
-2. Extract the `LockSmith` folder to your WoW AddOns directory:
-   - Windows (Anniversary/TBC): `World of Warcraft\_anniversary_\Interface\AddOns\`
-   - Windows (Classic Era): `World of Warcraft\_classic_\Interface\AddOns\`
-   - Mac: `Applications/World of Warcraft/_classic_/Interface/AddOns/`
-3. Restart WoW if it's currently running
-4. At the character select screen, click "AddOns" and make sure LockSmith is enabled
+1. Download the latest release from CurseForge
+2. Extract the `LockSmithPro` folder to your WoW AddOns directory:
+   - **Windows (Classic Era):** `World of Warcraft\_classic_\Interface\AddOns\`
+   - **Windows (TBC/Wrath):** `World of Warcraft\_classic_\Interface\AddOns\`
+   - **Windows (Retail):** `World of Warcraft\_retail_\Interface\AddOns\`
+   - **Mac:** `Applications/World of Warcraft/_classic_/Interface/AddOns/`
+3. Restart WoW if currently running
+4. At character select, click **AddOns** and ensure LockSmithPro is enabled
 
-## Usage
+## 📋 Commands
 
-### Quick Start
-1. Log in to your Rogue (or any character)
-2. Type `/locksmith` to open the settings panel
-3. Click the **Start** button to begin monitoring for requests
-4. Customize your advertisement message and settings
-5. Click **Send Advertisement** or enable the ad timer (popup prompt)
+- **`/locksmith`** or **`/ls`** - Open dashboard
+- **`/locksmith start`** - Start monitoring
+- **`/locksmith stop`** - Stop monitoring
+- **`/locksmith toggle`** - Toggle on/off
+- **`/locksmith ad`** - Send advertisement to selected channels
+- **`/locksmith skill`** - Check current lockpicking skill
+- **`/locksmith stats`** - View statistics in chat
+- **`/locksmith minimap`** - Toggle minimap button visibility
 
-### Slash Commands
-- `/locksmith` or `/ls` - Open settings panel
-- `/locksmith start` - Start the addon
-- `/locksmith stop` - Stop the addon
-- `/locksmith toggle` - Toggle on/off
-- `/locksmith ad` - Send advertisement to selected channels
-- `/locksmith skill` - Check your current lockpicking skill
-- `/locksmith stats` - View your statistics in chat
-- `/locksmith minimap` - Toggle minimap button visibility
+## 🎨 Dashboard Navigation
 
-### Settings Panel
+Access via `/locksmith` or click the minimap button
 
-Access via `/locksmith` or through Interface Options -> AddOns -> LockSmith
+### **Job Board Tab**
+- **Active job tracking** - See current lockpicking requests
+- **Job history** - View recent completed jobs
+- **Quick actions** - Accept, ignore, or invite from the board
+- **Status overview** - Current monitoring state and skill level
 
-**Addon Control**
-- Start/Stop button
-- Real-time status display with current skill level
+### **Settings Tab**
+- **Addon Control** - Start/Stop button with real-time status
+- **Channel Monitoring** - Toggle Trade, General, LFG, and Whisper channels
+- **Sound Effects** - Enable/disable audio notifications
+- **Raid Markers** - Auto-mark self with Star and customers with unique icons
+- **Advertisement** - Edit message, choose channels, enable timer
+- **Auto-Response** - Configure low-skill and thank-you whispers
+- **Variable Support** - Use %CURRENT%, %REQUIRED%, and %TIP% placeholders
+- **Icon Helper** - Reference guide for raid icons and symbols
 
-**Channel Monitoring**
-- Toggle Trade, General, LFG, and Whisper monitoring on/off
-- Toggle sound effects on/off for notification popups
-- Toggle auto-mark self with Star (when party leader)
-- Toggle auto-mark customers with unique raid icons
+### **Statistics Tab**
+- **Total Gold Earned** - All-time and session earnings
+- **Total Jobs Completed** - Job count with grouping (10-minute window)
+- **Total Boxes Opened** - Overall count with per-type breakdown
+- **Average Tip Per Job** - Know your typical earnings
+- **Session Stats** - Current session tracking separate from all-time
+- **Refresh & Reset** - Update display or clear all data
 
-**Advertisement Settings**
-- Edit your advertisement message
-- Choose which channels to broadcast to (Trade, General, LFG, Yell)
-- Send manually or enable the ad timer (shows a ready popup; click to send)
-- Use "Set Default" to restore the default message
+## 📦 Supported Boxes
 
-**Auto-Response Settings**
-- Toggle low-skill whispers on/off
-- Toggle thank-you whispers after a tip
-- Customize low-skill and thank-you messages
-- Use %CURRENT%, %REQUIRED%, and %TIP% as placeholders
-- Icon reference helper shows available raid icons and symbols
+The addon automatically detects your WoW version and shows only relevant boxes for that expansion.
 
-**Statistics**
-- Total gold earned
-- Total jobs completed (grouped per customer within 10 minutes)
-- Total boxes opened
-- Per-box counts
-- Average tip per job
-- Last session earnings
-- Refresh and Reset buttons
+### Junkboxes (Pickpocketed)
+| Box Type | Required Skill | Expansion |
+|----------|----------------|-----------|
+| Battered Junkbox | 1 | All |
+| Worn Junkbox | 100 | All |
+| Sturdy Junkbox | 175 | All |
+| Heavy Junkbox | 250 | Classic+ |
+| Strong Junkbox | 300 | TBC+ |
+| Reinforced Junkbox | 350 | Wrath+ |
+| Flame-Scarred Junkbox | 400 | Cata+ |
 
-## Supported Boxes
+### Lockboxes (World Drops)
+| Box Type | Required Skill | Expansion |
+|----------|----------------|-----------|
+| Strong Iron Lockbox | 125 | All |
+| Steel Lockbox | 175 | All |
+| Reinforced Steel Lockbox | 225 | All |
+| Mithril Lockbox | 225 | All |
+| Thorium Lockbox | 225 | Classic+ |
+| Eternium Lockbox | 225 | Classic+ |
+| Khorium Lockbox | 325 | TBC+ |
+| Froststeel Lockbox | 375 | Wrath+ |
+| Titanium Lockbox | 400 | Wrath+ |
+| Elementium Lockbox | 425 | Cata+ |
+| Ghost Iron Lockbox | 450 | MoP+ |
+| True Steel Lockbox | 500 | WoD+ |
+| Leystone Lockbox | 550 | Legion+ |
+| Barnacled Lockbox | 600 | BFA+ |
+| Synvir Lockbox | Auto | Shadowlands+ |
+| Oxxein Lockbox | Auto | Shadowlands+ |
+| Bismuth Lockbox | 80 | War Within+ |
 
-### Junkboxes
-- **Battered Junkbox** (1 skill)
-- **Worn Junkbox** (100 skill)
-- **Sturdy Junkbox** (175 skill)
-- **Heavy Junkbox** (250 skill) - Classic
-- **Strong Junkbox** (300 skill) - TBC
+### Locked Chests (Dungeon/World)
+| Box Type | Required Skill | Expansion |
+|----------|----------------|-----------|
+| Ironbound Locked Chest | 175 | Classic+ |
+| Reinforced Locked Chest | 250 | Classic+ |
 
-### Lockboxes
-- **Strong Iron Lockbox** (125 skill)
-- **Steel Lockbox** (175 skill)
-- **Reinforced Steel Lockbox** (225 skill)
-- **Mithril Lockbox** (225 skill)
-- **Thorium Lockbox** (225 skill) - Classic
-- **Eternium Lockbox** (225 skill) - Classic
-- **Khorium Lockbox** (325 skill) - TBC
-- **Ironbound Locked Chest** (175 skill) - Classic
-- **Reinforced Locked Chest** (250 skill) - Classic
+**Note:** The addon includes **26 different box types** across all WoW expansions and automatically shows only boxes available in your current WoW version. For example, Classic Era players won't see Wrath or retail boxes, while Retail players can see all boxes. Smart expansion detection ensures you only get notified for relevant requests!
 
-*Note: The addon automatically detects your WoW version and shows only relevant boxes for that expansion.*
+## ⚙️ How It Works
 
-## How It Works
+1. **Monitoring** - LockSmithPro monitors your selected chat channels in real-time
+2. **Detection** - Recognizes lockpicking keywords and box types via item links
+3. **Skill Check** - Identifies the specific box and verifies your skill is sufficient
+4. **Notification** - Shows popup with player name, message, box type, and action buttons
+5. **Response** - If skill is too low and enabled, automatically whispers the player
+6. **Trade Tracking** - Monitors trade windows for:
+   - Gold received from customer
+   - Boxes traded in slots 1-6 (received in your inventory)
+   - Pick Lock spell casts on slot 7 (in-window unlocking)
+7. **Job Grouping** - Multiple trades with same player within 10 minutes = one job
+8. **Statistics** - All data automatically saved and displayed in dashboard
 
-1. **Monitoring**: When running, LockSmith monitors your selected chat channels
-2. **Detection**: When someone mentions lockpicking keywords (e.g., "lockpick", "unlock", "open box"), it analyzes the message
-3. **Skill Check**: Identifies the box type and checks if your skill is sufficient
-4. **Notification**: If you can help, shows a popup with the message and action buttons
-5. **Response**: If your skill is too low and enabled, whispers them automatically
-6. **Tracking**: Monitors trade windows for gold and box counts, then updates your statistics
+## 💡 Tips for Success
 
-## Tips for Success
+- **Stay in capital cities** - Trade chat only works in major cities
+- **Customize your ad** - Make it stand out with raid icons and personality
+- **Be responsive** - First come, first served in the lockpicking business
+- **Mention tips** - Let customers know tips are appreciated but optional
+- **Check your stats** - Monitor earnings to understand your busiest times
+- **Use raid markers** - Makes finding customers easy in crowded areas
+- **Enable auto-responses** - Save time with automated whispers for common situations
 
-- Keep the addon running while in capital cities (Trade chat only works there)
-- Customize your advertisement to stand out
-- Be responsive to notifications - first come, first served!
-- Tips are appreciated but not required (mention this in your ad!)
-- Check your stats regularly to track your earnings
+## 💬 Message Customization
 
-## Default Messages
+All messages are fully customizable in the settings panel with support for raid icons and special characters.
+
+### Default Messages
 
 **Advertisement:**
 ```
@@ -174,46 +222,150 @@ Sorry, my lockpicking skill (%CURRENT%) is too low for that box (requires %REQUI
 Thank you for the %TIP% tip! ♥
 ```
 
-**Available Icons:**
-You can use these in your messages to make them stand out:
-- Raid markers: `{rt1}` `{rt2}` `{rt3}` `{rt4}` `{rt5}` `{rt6}` `{rt7}` `{rt8}`
+### Available Icons & Variables
+
+**Raid Markers:**
+- `{rt1}` through `{rt8}` - Numbered raid icons
 - Named icons: `{skull}` `{circle}` `{diamond}` `{triangle}` `{moon}` `{square}` `{cross}` `{star}`
-- Special: `♥` (heart)
 
-Example: `{skull} Locksmith - Fast service - Tips welcome! {skull}`
+**Special Characters:**
+- `♥` - Heart symbol
+- Any Unicode character supported by WoW
 
-All messages are fully customizable in the settings panel!
+**Variables:**
+- `%CURRENT%` - Your current lockpicking skill
+- `%REQUIRED%` - Required skill for the box
+- `%TIP%` - Gold amount received (formatted)
 
-## Troubleshooting
+**Example Ad:**
+```
+{skull} Master Locksmith - All boxes - Fast service - Tips welcome! {skull}
+```
 
-**Addon not loading?**
-- Make sure it's enabled at character select screen
-- Check that all files are in the correct folder
+## 🔧 Troubleshooting
 
-**Not seeing notifications?**
-- Make sure the addon is Started (green status)
-- Check that you're monitoring the correct channels
-- Verify your lockpicking skill is high enough
+### Addon Not Loading?
+- Verify it's enabled at character select screen under "AddOns"
+- Check all files are in the correct AddOns directory
+- Ensure folder name is exactly `LockSmithPro`
+- Try `/reload` command in-game
 
-**Advertisements not sending?**
-- Trade channel only works in capital cities
-- Check that you've selected at least one channel
-- The ad timer only shows a ready popup; click Send to post (protected chat rules)
-- Make sure you're not in a LFG/raid group (some channels are restricted)
+### Not Seeing Notifications?
+- Confirm addon is **Started** (green status in dashboard)
+- Verify you're monitoring the correct channels (Settings tab)
+- Check your lockpicking skill is high enough for the box type
+- Ensure sound effects aren't muted if expecting audio alerts
 
-**Stats not tracking?**
-- Gold tracking only works from direct trades (not mail)
-- Box counting only works for boxes traded to you
-- Jobs are grouped per customer within 10 minutes
-- Make sure the addon is running when you receive gold
-- Click "Refresh Stats" to update the display
+### Advertisements Not Sending?
+- Trade channel **only works in capital cities**
+- Verify at least one channel is selected in settings
+- Ad timer shows a popup prompt - must click **Send** to broadcast (WoW chat protection)
+- Cannot send to some channels while in LFG/raid groups
+- Check you're not being rate-limited by WoW (spam protection)
 
-## Version
+### Stats Not Tracking?
+- Gold tracking only works from **direct trades** (not mail or quest rewards)
+- Box counting tracks both:
+  - Boxes **traded to you** in slots 1-6
+  - Boxes **unlocked in-window** via Pick Lock spell on slot 7
+- Jobs group trades within 10 minutes with same player
+- Addon must be **running** when you receive gold
+- Click **Refresh Stats** button to update the display
+- Use `/locksmith stats` to verify data in chat
+
+### General Issues?
+- Try `/reload` to restart the UI
+- Check for addon conflicts by disabling other addons
+- Verify WoW version compatibility
+- Review error messages in chat for specific issues
+
+## 🏆 Perfect For
+
+- **Rogue players** offering lockpicking services for profit
+- **Business-minded players** who want professional tools for their side hustle
+- **Statistics enthusiasts** who enjoy tracking earnings and performance
+- **AFK gold makers** who want automated monitoring and responses
+- **Guild service providers** running organized lockpicking operations
+- **Casual players** who occasionally help others with boxes
+
+## 🛠️ Technical Details
+
+- **Built for WoW** - Native WoW addon using standard Lua API
+- **Persistent storage** - All data saved in WoW's SavedVariables
+- **Event-driven** - Efficient chat monitoring with minimal performance impact
+- **Cross-version compatible** - Works on Classic Era, TBC, Wrath, Cata, and Retail
+- **Memory efficient** - Smart caching and data management
+- **No dependencies** - Standalone addon, no external libraries required
+
+## 🔨 Development
+
+LockSmithPro uses a symlink-based development workflow for instant testing.
+
+### Development Setup
+
+**Create symlinks for live development:**
+```powershell
+# Run as Administrator
+.\.build\create-symlink.ps1
+```
+
+This creates symbolic links from your GitHub folder to all WoW installations:
+- Retail (`_retail_`)
+- Classic Era (`_classic_era_`)
+- Wrath/Cata Classic (`_classic_`)
+- Anniversary (`_anniversary_`)
+
+After running this, any changes you make in your GitHub folder instantly appear in WoW. Just type `/reload` in-game to see changes.
+
+**Remove symlinks when done:**
+```powershell
+# Run as Administrator
+.\.build\remove-symlink.ps1
+```
+
+**Custom WoW path:**
+```powershell
+.\.build\create-symlink.ps1 -WowPath "D:\Games\World of Warcraft"
+```
+
+### Creating Releases
+
+See [.build/QUICK_RELEASE_GUIDE.md](.build/QUICK_RELEASE_GUIDE.md) for detailed release instructions.
+
+**Quick release:**
+```powershell
+.\.build\create-release.ps1 -Version "1.0.1" -EditionName "Bug Fix Edition"
+```
+
+### Project Structure
+
+```
+LockSmithPro/
+├── .build/              # Build scripts and release tools
+├── Core/                # Core functionality (Statistics, Skills, Utils)
+├── Data/                # Box database and configuration
+├── Features/            # Advertisement, AutoResponse, ChatMonitor
+├── UI/                  # Dashboard, Settings, Notifications, Minimap
+├── Init.lua             # Main entry point
+├── LockSmithPro.toc     # Addon metadata
+└── SlashCommands.lua    # Slash command handlers
+```
+
+## 📖 Version History
 
 **Current Version:** 1.0.0
 
-## Author
+### Recent Updates
+- Initial release with full feature set
+- Chat monitoring across all major channels
+- Advertisement system with timer support
+- Automatic earnings and box tracking
+- Raid marker automation
+- Auto-response system
+- Dashboard UI with multiple tabs
 
-Created for World of Warcraft Classic/Anniversary Edition
+---
 
-Enjoy your lockpicking business!
+**Author:** 0xTrk
+
+*Transform your Rogue into a professional lockpicking business with LockSmithPro!*

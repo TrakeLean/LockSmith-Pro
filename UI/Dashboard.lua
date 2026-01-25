@@ -1,8 +1,8 @@
 -- Dashboard.lua
--- Main persistent UI window for LockSmith
+-- Main persistent UI window for LockSmithPro
 
-LockSmith = LockSmith or {}
-LockSmith.Dashboard = {}
+LockSmithPro = LockSmithPro or {}
+LockSmithPro.Dashboard = {}
 
 local mainFrame = nil
 local currentTab = "jobboard"
@@ -21,19 +21,19 @@ local function SaveWindowPosition()
     if not mainFrame then return end
 
     local point, _, relativePoint, xOfs, yOfs = mainFrame:GetPoint()
-    LockSmithDB.dashboard = LockSmithDB.dashboard or {}
-    LockSmithDB.dashboard.point = point
-    LockSmithDB.dashboard.relativePoint = relativePoint
-    LockSmithDB.dashboard.x = xOfs
-    LockSmithDB.dashboard.y = yOfs
-    LockSmithDB.dashboard.width = mainFrame:GetWidth()
-    LockSmithDB.dashboard.height = mainFrame:GetHeight()
+    LockSmithProDB.dashboard = LockSmithProDB.dashboard or {}
+    LockSmithProDB.dashboard.point = point
+    LockSmithProDB.dashboard.relativePoint = relativePoint
+    LockSmithProDB.dashboard.x = xOfs
+    LockSmithProDB.dashboard.y = yOfs
+    LockSmithProDB.dashboard.width = mainFrame:GetWidth()
+    LockSmithProDB.dashboard.height = mainFrame:GetHeight()
 end
 
 local function LoadWindowPosition()
-    if not mainFrame or not LockSmithDB.dashboard then return end
+    if not mainFrame or not LockSmithProDB.dashboard then return end
 
-    local db = LockSmithDB.dashboard
+    local db = LockSmithProDB.dashboard
     if db.point and db.x and db.y then
         mainFrame:ClearAllPoints()
         mainFrame:SetPoint(db.point, UIParent, db.relativePoint or db.point, db.x, db.y)
@@ -103,7 +103,7 @@ local function UpdateTabButtonWidths(containerWidth)
 end
 
 local function CreateTabButton(parent, tabName, displayName, index)
-    local button = CreateFrame("Button", "LockSmithTab" .. tabName, parent)
+    local button = CreateFrame("Button", "LockSmithProTab" .. tabName, parent)
     button:SetHeight(30)
     button:SetWidth(120) -- Initial width, will be updated
 
@@ -147,7 +147,7 @@ local function CreateTabButton(parent, tabName, displayName, index)
 end
 
 local function CreateTabContent(parent, tabName)
-    local content = CreateFrame("Frame", "LockSmithTabContent" .. tabName, parent)
+    local content = CreateFrame("Frame", "LockSmithProTabContent" .. tabName, parent)
     content:SetAllPoints(parent)
     content:Hide()
 
@@ -162,7 +162,7 @@ local function CreateDashboardFrame()
     if mainFrame then return mainFrame end
 
     -- Main frame
-    mainFrame = CreateFrame("Frame", "LockSmithDashboard", UIParent, "BackdropTemplate")
+    mainFrame = CreateFrame("Frame", "LockSmithProDashboard", UIParent, "BackdropTemplate")
     mainFrame:SetSize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
     mainFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     mainFrame:SetFrameStrata("MEDIUM")
@@ -198,14 +198,14 @@ local function CreateDashboardFrame()
     -- Title text
     local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("LEFT", titleBar, "LEFT", 10, 0)
-    title:SetText("|cff990000LockSmith Dashboard|r")
+    title:SetText("|cff990000LockSmithPro Dashboard|r")
 
     -- Close button
     local closeBtn = CreateFrame("Button", nil, titleBar, "UIPanelCloseButton")
     closeBtn:SetPoint("RIGHT", titleBar, "RIGHT", -5, 0)
     closeBtn:SetSize(20, 20)
     closeBtn:SetScript("OnClick", function()
-        LockSmith.Dashboard:Hide()
+        LockSmithPro.Dashboard:Hide()
     end)
 
     -- Make draggable via title bar
@@ -245,7 +245,7 @@ local function CreateDashboardFrame()
     end
 
     -- Tab container (holds all tab content)
-    local tabContainer = CreateFrame("Frame", "LockSmithTabContainer", mainFrame)
+    local tabContainer = CreateFrame("Frame", "LockSmithProTabContainer", mainFrame)
     tabContainer:SetPoint("TOPLEFT", titleBar, "BOTTOMLEFT", 0, -40) -- Space for tab buttons
     tabContainer:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", -15, 15)
     mainFrame.tabContainer = tabContainer
@@ -253,7 +253,7 @@ local function CreateDashboardFrame()
     -- Handle window resize
     mainFrame:SetScript("OnSizeChanged", function(_, width, height)
         SaveWindowPosition()
-        LockSmith.Dashboard:OnWindowResize(width, height)
+        LockSmithPro.Dashboard:OnWindowResize(width, height)
     end)
 
     -- Create tabs
@@ -273,9 +273,9 @@ local function CreateDashboardFrame()
     }
 
     -- Initialize tab contents (will be filled by other modules)
-    LockSmith.Dashboard:InitializeJobBoard(tabs.jobboard.content)
-    LockSmith.Dashboard:InitializeStats(tabs.stats.content)
-    LockSmith.Dashboard:InitializeSettings(tabs.settings.content)
+    LockSmithPro.Dashboard:InitializeJobBoard(tabs.jobboard.content)
+    LockSmithPro.Dashboard:InitializeStats(tabs.stats.content)
+    LockSmithPro.Dashboard:InitializeSettings(tabs.settings.content)
 
     -- Load saved position/size
     LoadWindowPosition()
@@ -295,24 +295,24 @@ end
 -- Public API
 -- ================================
 
-function LockSmith.Dashboard:Initialize()
+function LockSmithPro.Dashboard:Initialize()
     CreateDashboardFrame()
 end
 
-function LockSmith.Dashboard:Show()
+function LockSmithPro.Dashboard:Show()
     if not mainFrame then
         CreateDashboardFrame()
     end
     mainFrame:Show()
 end
 
-function LockSmith.Dashboard:Hide()
+function LockSmithPro.Dashboard:Hide()
     if mainFrame then
         mainFrame:Hide()
     end
 end
 
-function LockSmith.Dashboard:Toggle()
+function LockSmithPro.Dashboard:Toggle()
     if not mainFrame then
         CreateDashboardFrame()
     end
@@ -324,12 +324,12 @@ function LockSmith.Dashboard:Toggle()
     end
 end
 
-function LockSmith.Dashboard:IsShown()
+function LockSmithPro.Dashboard:IsShown()
     return mainFrame and mainFrame:IsShown()
 end
 
 -- Handle window resize for responsive layout
-function LockSmith.Dashboard:OnWindowResize(width, height)
+function LockSmithPro.Dashboard:OnWindowResize(width, height)
     if not mainFrame then return end
 
     -- Update tab button widths to fill the row
@@ -341,12 +341,12 @@ function LockSmith.Dashboard:OnWindowResize(width, height)
         if tabs.jobboard and tabs.jobboard.jobScrollFrame and tabs.jobboard.jobContentFrame then
             tabs.jobboard.jobContentFrame:SetWidth(tabs.jobboard.jobScrollFrame:GetWidth())
         end
-        LockSmith.Dashboard:RebuildJobList()
+        LockSmithPro.Dashboard:RebuildJobList()
     end
 
     -- Update stats tab layout
     if currentTab == "stats" and tabs.stats and tabs.stats.content then
-        LockSmith.Dashboard:UpdateStatsLayout(width, height)
+        LockSmithPro.Dashboard:UpdateStatsLayout(width, height)
     end
 end
 
@@ -360,7 +360,38 @@ local jobScrollFrame = nil
 local jobContentFrame = nil
 local lastAdSendTime = 0 -- Track last ad send time
 
-function LockSmith.Dashboard:InitializeJobBoard(content)
+local function LayoutJobBoardStatsFooter(statsFooter, content)
+    if not statsFooter or not content then return end
+
+    local width = statsFooter:GetWidth()
+    if not width or width <= 0 then
+        width = DEFAULT_WIDTH
+    end
+
+    local leftPadding = 10
+    local rightPadding = 10
+    local availableWidth = width - leftPadding - rightPadding
+    if availableWidth <= 0 then return end
+
+    local columnWidth = math.floor(availableWidth / 4)
+    local lastColumnWidth = availableWidth - (columnWidth * 3)
+
+    local function PlaceStat(fontString, index, widthOverride)
+        if not fontString then return end
+        fontString:ClearAllPoints()
+        fontString:SetPoint("LEFT", statsFooter, "LEFT", leftPadding + (columnWidth * (index - 1)), 0)
+        fontString:SetWidth(widthOverride or columnWidth)
+        fontString:SetJustifyH("CENTER")
+        fontString:SetWordWrap(false)
+    end
+
+    PlaceStat(content.goldText, 1)
+    PlaceStat(content.jobsText, 2)
+    PlaceStat(content.boxesText, 3)
+    PlaceStat(content.avgText, 4, lastColumnWidth)
+end
+
+function LockSmithPro.Dashboard:InitializeJobBoard(content)
     -- Status bar at top
     local statusBar = CreateFrame("Frame", nil, content, "BackdropTemplate")
     statusBar:SetHeight(40)
@@ -393,13 +424,13 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
     startStopBtn:SetPoint("RIGHT", statusBar, "RIGHT", -10, 0)
     startStopBtn:SetText("Start")
     startStopBtn:SetScript("OnClick", function()
-        LockSmith:Toggle()
-        LockSmith.Dashboard:UpdateJobBoardStatus()
+        LockSmithPro:Toggle()
+        LockSmithPro.Dashboard:UpdateJobBoardStatus()
     end)
     content.startStopBtn = startStopBtn
 
     -- Scrollable job list
-    jobScrollFrame = CreateFrame("ScrollFrame", "LockSmithJobScrollFrame", content, "UIPanelScrollFrameTemplate")
+    jobScrollFrame = CreateFrame("ScrollFrame", "LockSmithProJobScrollFrame", content, "UIPanelScrollFrameTemplate")
     jobScrollFrame:SetPoint("TOPLEFT", statusBar, "BOTTOMLEFT", 0, -10)
     jobScrollFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -30, 120)
 
@@ -431,32 +462,29 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
 
     -- Individual stat labels spread evenly across the width, centered vertically
     local goldText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    goldText:SetPoint("LEFT", statsFooter, "LEFT", 10, 0)
-    goldText:SetPoint("RIGHT", statsFooter, "LEFT", (statsFooter:GetWidth() or 400) * 0.25, 0)
-    goldText:SetJustifyH("CENTER")
-    goldText:SetText("Gold: 0g")
+    goldText:SetText("Earned: 0g")
     content.goldText = goldText
 
     local jobsText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    jobsText:SetPoint("LEFT", statsFooter, "LEFT", (statsFooter:GetWidth() or 400) * 0.25, 0)
-    jobsText:SetPoint("RIGHT", statsFooter, "CENTER", 0, 0)
-    jobsText:SetJustifyH("CENTER")
     jobsText:SetText("Jobs: 0")
     content.jobsText = jobsText
 
     local boxesText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    boxesText:SetPoint("LEFT", statsFooter, "CENTER", 0, 0)
-    boxesText:SetPoint("RIGHT", statsFooter, "RIGHT", -(statsFooter:GetWidth() or 400) * 0.25, 0)
-    boxesText:SetJustifyH("CENTER")
     boxesText:SetText("Boxes: 0")
     content.boxesText = boxesText
 
     local avgText = statsFooter:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    avgText:SetPoint("LEFT", statsFooter, "RIGHT", -(statsFooter:GetWidth() or 400) * 0.25, 0)
-    avgText:SetPoint("RIGHT", statsFooter, "RIGHT", -10, 0)
-    avgText:SetJustifyH("CENTER")
     avgText:SetText("Avg: 0g")
     content.avgText = avgText
+    content.statsFooter = statsFooter
+
+    LayoutJobBoardStatsFooter(statsFooter, content)
+    statsFooter:HookScript("OnSizeChanged", function(self)
+        LayoutJobBoardStatsFooter(self, content)
+    end)
+    statsFooter:HookScript("OnShow", function(self)
+        LayoutJobBoardStatsFooter(self, content)
+    end)
 
     -- Ad buttons
     local adButtonFrame = CreateFrame("Frame", nil, content)
@@ -471,9 +499,9 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
     sendAdBtn:SetPoint("RIGHT", adButtonFrame, "CENTER", -2, 0)
     sendAdBtn:SetText("Send Ad")
     sendAdBtn:SetScript("OnClick", function()
-        if LockSmith.Advertisement then
-            LockSmith.Advertisement:SendAdvertisement()
-            LockSmith.Dashboard:UpdateAdButton()
+        if LockSmithPro.Advertisement then
+            LockSmithPro.Advertisement:SendAdvertisement()
+            LockSmithPro.Dashboard:UpdateAdButton()
         end
     end)
     content.sendAdBtn = sendAdBtn
@@ -482,7 +510,7 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
     if not tabs.jobboard.adTicker then
         tabs.jobboard.adTicker = C_Timer.NewTicker(1, function()
             if currentTab == "jobboard" then
-                LockSmith.Dashboard:UpdateAdButton()
+                LockSmithPro.Dashboard:UpdateAdButton()
             end
         end)
     end
@@ -494,25 +522,26 @@ function LockSmith.Dashboard:InitializeJobBoard(content)
     yellAdBtn:SetPoint("RIGHT", adButtonFrame, "RIGHT", -5, 0)
     yellAdBtn:SetText("Yell Ad")
     yellAdBtn:SetScript("OnClick", function()
-        if LockSmith.Advertisement and LockSmithDB.adMessage then
-            SendChatMessage(LockSmithDB.adMessage, "YELL")
-            print("|cff00ff00LockSmith:|r Ad sent to Yell")
+        if LockSmithPro.Advertisement and LockSmithProDB.adMessage then
+            local message = LockSmithPro.Advertisement:ProcessAdMessage(LockSmithProDB.adMessage)
+            SendChatMessage(message, "YELL")
+            print("|cff00ff00LockSmithPro:|r Ad sent to Yell")
         end
     end)
 
     -- Update status initially
-    LockSmith.Dashboard:UpdateJobBoardStatus()
+    LockSmithPro.Dashboard:UpdateJobBoardStatus()
 end
 
 -- Update ad button with countdown
-function LockSmith.Dashboard:UpdateAdButton()
+function LockSmithPro.Dashboard:UpdateAdButton()
     if not tabs.jobboard or not tabs.jobboard.content then return end
 
     local sendAdBtn = tabs.jobboard.content.sendAdBtn
     if not sendAdBtn then return end
 
     local now = GetTime()
-    local interval = LockSmithDB.adTimerInterval or 60
+    local interval = LockSmithProDB.adTimerInterval or 60
     local timeSinceLastAd = now - lastAdSendTime
     local timeRemaining = math.max(0, interval - timeSinceLastAd)
 
@@ -525,17 +554,17 @@ function LockSmith.Dashboard:UpdateAdButton()
 end
 
 -- Track ad send
-function LockSmith.Dashboard:OnAdSent()
+function LockSmithPro.Dashboard:OnAdSent()
     lastAdSendTime = GetTime()
-    LockSmith.Dashboard:UpdateAdButton()
+    LockSmithPro.Dashboard:UpdateAdButton()
 end
 
 -- Update status bar
-function LockSmith.Dashboard:UpdateJobBoardStatus()
+function LockSmithPro.Dashboard:UpdateJobBoardStatus()
     if not tabs.jobboard or not tabs.jobboard.content then return end
 
     local content = tabs.jobboard.content
-    local isRunning = LockSmith:IsRunning()
+    local isRunning = LockSmithPro:IsRunning()
 
     -- Status text
     if content.statusText then
@@ -548,7 +577,7 @@ function LockSmith.Dashboard:UpdateJobBoardStatus()
 
     -- Skill text
     if content.skillText then
-        local skill, maxSkill = LockSmith.Skills:GetCachedSkill()
+        local skill, maxSkill = LockSmithPro.Skills:GetCachedSkill()
         content.skillText:SetText("Skill: " .. skill .. "/" .. maxSkill)
     end
 
@@ -559,20 +588,20 @@ function LockSmith.Dashboard:UpdateJobBoardStatus()
 
     -- Session stats (update individual text elements)
     if content.goldText then
-        local sessionGold = LockSmith.Statistics:GetSessionGold()
-        local sessionJobs = LockSmith.Statistics:GetSessionJobs()
-        local sessionBoxes = LockSmith.Statistics:GetSessionBoxes()
-        local sessionAvg = LockSmith.Statistics:GetSessionAverage()
+        local sessionGold = LockSmithPro.Statistics:GetSessionGold()
+        local sessionJobs = LockSmithPro.Statistics:GetSessionJobs()
+        local sessionBoxes = LockSmithPro.Statistics:GetSessionBoxes()
+        local sessionAvg = LockSmithPro.Statistics:GetSessionAverage()
 
-        content.goldText:SetText("Gold: " .. LockSmith.Utils:FormatGold(sessionGold))
+        content.goldText:SetText("Earned: " .. LockSmithPro.Utils:FormatGold(sessionGold))
         content.jobsText:SetText("Jobs: " .. sessionJobs)
         content.boxesText:SetText("Boxes: " .. sessionBoxes)
-        content.avgText:SetText("Avg: " .. LockSmith.Utils:FormatGold(sessionAvg))
+        content.avgText:SetText("Avg: " .. LockSmithPro.Utils:FormatGold(sessionAvg))
     end
 end
 
 -- Add a job to the board
-function LockSmith.Dashboard:AddJob(sender, message, boxData, channelName, requiredSkill)
+function LockSmithPro.Dashboard:AddJob(sender, message, boxData, channelName, requiredSkill)
     -- Create job data
     local job = {
         sender = sender,
@@ -580,35 +609,61 @@ function LockSmith.Dashboard:AddJob(sender, message, boxData, channelName, requi
         boxData = boxData,
         channelName = channelName,
         requiredSkill = requiredSkill,
-        timestamp = GetTime()
+        timestamp = GetTime(),
+        registeredAt = date("%H:%M:%S")
     }
 
     -- Add to list (newest first)
     table.insert(jobList, 1, job)
 
     -- Rebuild job list UI
-    LockSmith.Dashboard:RebuildJobList()
+    LockSmithPro.Dashboard:RebuildJobList()
 
     -- Play sound and visual alert
-    if LockSmithDB.playSoundEffects then
+    if LockSmithProDB.playSoundEffects then
         PlaySound(SOUNDKIT and SOUNDKIT.TELL_MESSAGE or "TellMessage", "Master")
     end
 end
 
 -- Clear all jobs
-function LockSmith.Dashboard:ClearAllJobs()
+function LockSmithPro.Dashboard:ClearAllJobs()
     jobList = {}
-    LockSmith.Dashboard:RebuildJobList()
+    LockSmithPro.Dashboard:RebuildJobList()
 end
 
 -- Remove a specific job
-function LockSmith.Dashboard:RemoveJob(index)
+function LockSmithPro.Dashboard:RemoveJob(index)
     table.remove(jobList, index)
-    LockSmith.Dashboard:RebuildJobList()
+    LockSmithPro.Dashboard:RebuildJobList()
+end
+
+-- Remove all jobs from a specific sender
+function LockSmithPro.Dashboard:RemoveJobsBySender(sender)
+    local normalized = string.lower(sender)
+    -- Normalize to remove realm name if present
+    local dash = string.find(normalized, "-", 1, true)
+    if dash then
+        normalized = string.sub(normalized, 1, dash - 1)
+    end
+
+    -- Remove all jobs from this sender (iterate backwards to safely remove)
+    for i = #jobList, 1, -1 do
+        local jobSender = string.lower(jobList[i].sender)
+        local jobDash = string.find(jobSender, "-", 1, true)
+        if jobDash then
+            jobSender = string.sub(jobSender, 1, jobDash - 1)
+        end
+
+        if jobSender == normalized then
+            table.remove(jobList, i)
+        end
+    end
+
+    LockSmithPro.Dashboard:RebuildJobList()
 end
 
 -- Rebuild the job list UI
-function LockSmith.Dashboard:RebuildJobList()
+function LockSmithPro.Dashboard:RebuildJobList()
     -- Clear existing job frames
     for _, frame in ipairs(jobFrames) do
         frame:Hide()
@@ -622,13 +677,13 @@ function LockSmith.Dashboard:RebuildJobList()
     local cardSpacing = 10
 
     for i, job in ipairs(jobList) do
-        local card = LockSmith.Dashboard:CreateJobCard(job, i)
+        local card = LockSmithPro.Dashboard:CreateJobCard(job, i)
         card:SetPoint("TOPLEFT", jobContentFrame, "TOPLEFT", 5, yOffset)
         card:SetPoint("TOPRIGHT", jobContentFrame, "TOPRIGHT", -5, yOffset)
 
         -- Highlight if new (within 2 seconds)
         if GetTime() - job.timestamp < 2 then
-            LockSmith.Dashboard:AnimateNewJob(card)
+            LockSmithPro.Dashboard:AnimateNewJob(card)
         end
 
         table.insert(jobFrames, card)
@@ -641,8 +696,22 @@ function LockSmith.Dashboard:RebuildJobList()
     jobContentFrame:SetHeight(totalHeight)
 end
 
+-- Helper to strip realm name from player name
+local function StripRealmName(fullName)
+    if type(fullName) ~= "string" then
+        return fullName
+    end
+
+    local dash = string.find(fullName, "-", 1, true)
+    if dash then
+        return string.sub(fullName, 1, dash - 1)
+    end
+
+    return fullName
+end
+
 -- Create a job card
-function LockSmith.Dashboard:CreateJobCard(job, index)
+function LockSmithPro.Dashboard:CreateJobCard(job, index)
     local card = CreateFrame("Frame", nil, jobContentFrame, "BackdropTemplate")
     card:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -669,42 +738,52 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
         closeBtnText:SetText("|cffaaaaaa×|r")
     end)
     closeBtn:SetScript("OnClick", function()
-        LockSmith.Dashboard:RemoveJob(index)
+        LockSmithPro.Dashboard:RemoveJob(index)
     end)
 
     -- Player name (smaller font)
     local playerName = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     playerName:SetPoint("TOPLEFT", card, "TOPLEFT", 10, -8)
-    playerName:SetText("|cff" .. (job.channelName == "WHISPER" and "ff69b4" or "ffcc00") .. job.sender .. "|r")
+    local nameColor = (job.channelName == "WHISPER" and "ff69b4" or "ffcc00")
+    local timeLabel = job.registeredAt or date("%H:%M:%S")
+    local displayName = StripRealmName(job.sender)
+    playerName:SetText("|cff" .. nameColor .. displayName .. "|r |cff888888[" .. timeLabel .. "]|r")
 
     -- Channel (smaller font)
     local channel = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     channel:SetPoint("TOPRIGHT", closeBtn, "TOPLEFT", -4, -6)
     channel:SetText(job.channelName or "Unknown")
 
+    -- Get card width from parent to calculate message width and button widths
+    local cardWidth = (jobContentFrame and jobContentFrame:GetWidth() or 400) - 10
+    local msgWidth = cardWidth - 20 -- 10px left margin + 10px right margin
+
     -- Message (smaller font, with word wrapping)
     local msg = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     msg:SetPoint("TOPLEFT", playerName, "BOTTOMLEFT", 0, -4)
-    msg:SetPoint("TOPRIGHT", card, "TOPRIGHT", -10, -20)
     msg:SetJustifyH("LEFT")
     msg:SetJustifyV("TOP")
     msg:SetWordWrap(true)
     msg:SetMaxLines(0) -- No limit on lines
     msg:SetNonSpaceWrap(false)
+    msg:SetWidth(msgWidth) -- Set width BEFORE setting text so wrapping works
 
     local msgText = job.message or ""
     msg:SetText("\"" .. msgText .. "\"")
 
-    -- Let the text calculate its height
+    -- Let the text calculate its height (now that width is set, wrapping will work)
     local msgHeight = msg:GetStringHeight()
 
-    -- Box info (smaller font)
+    -- Box info (smaller font) - only show if box data exists (item was linked)
     local boxInfo = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     boxInfo:SetPoint("TOPLEFT", msg, "BOTTOMLEFT", 0, -4)
+    local boxInfoHeight = 14 -- Default height for spacing calculation
     if job.boxData then
         boxInfo:SetText("|cff00ff00Box:|r " .. job.boxData.name .. " (|cffffcc00" .. job.requiredSkill .. " skill|r)")
     else
-        boxInfo:SetText("|cffccccccBox: Unknown|r")
+        -- No box data (no item link) - hide the box info line
+        boxInfo:SetText("")
+        boxInfoHeight = 0 -- No height if not shown
     end
 
     -- Buttons (responsive width - use anchors to distribute evenly)
@@ -713,8 +792,8 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
     inviteBtn:SetHeight(22)
     inviteBtn:SetText("Invite")
     inviteBtn:SetScript("OnClick", function()
-        if LockSmith.Utils then
-            LockSmith.Utils:InvitePlayer(job.sender)
+        if LockSmithPro.Utils then
+            LockSmithPro.Utils:InvitePlayer(job.sender)
         end
     end)
 
@@ -729,19 +808,18 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
     ignoreBtn:SetHeight(22)
     ignoreBtn:SetText("Ignore")
     ignoreBtn:SetScript("OnClick", function()
-        if LockSmith.ChatMonitor and LockSmith.ChatMonitor.AddToSessionIgnore then
-            LockSmith.ChatMonitor:AddToSessionIgnore(job.sender)
+        if LockSmithPro.ChatMonitor and LockSmithPro.ChatMonitor.AddToSessionIgnore then
+            LockSmithPro.ChatMonitor:AddToSessionIgnore(job.sender)
         end
-        LockSmith.Dashboard:RemoveJob(index)
+        -- Remove ALL jobs from this sender, not just this one
+        LockSmithPro.Dashboard:RemoveJobsBySender(job.sender)
     end)
 
-    -- Calculate total card height dynamically FIRST
-    -- Top padding (8) + playerName height (~14) + spacing (4) + message height + spacing (4) + boxInfo height (~14) + spacing (6) + button height (22) + bottom padding (6)
-    local totalHeight = 8 + 14 + 4 + msgHeight + 4 + 14 + 6 + 22 + 6
+    -- Calculate total card height dynamically
+    -- Top padding (8) + playerName height (~14) + spacing (4) + message height + spacing (4) + boxInfo height (0 or ~14) + spacing (6 or 0) + button height (22) + bottom padding (6)
+    local boxInfoSpacing = boxInfoHeight > 0 and 6 or 0 -- Only add spacing if box info is shown
+    local totalHeight = 8 + 14 + 4 + msgHeight + 4 + boxInfoHeight + boxInfoSpacing + 22 + 6
     card:SetHeight(math.max(95, totalHeight)) -- Minimum 95 to match original
-
-    -- Get card width from parent (jobContentFrame width - the 10px margins from anchoring)
-    local cardWidth = (jobContentFrame and jobContentFrame:GetWidth() or 400) - 10
 
     -- Calculate button widths: (cardWidth - left margin - right margin - 2 gaps) / 3
     local leftMargin = 10
@@ -764,7 +842,7 @@ function LockSmith.Dashboard:CreateJobCard(job, index)
 end
 
 -- Animate new job card
-function LockSmith.Dashboard:AnimateNewJob(card)
+function LockSmithPro.Dashboard:AnimateNewJob(card)
     -- Flash border
     local flashCount = 0
     local flashFrame = CreateFrame("Frame")
@@ -785,7 +863,7 @@ end
 -- Stats Tab
 -- ================================
 
-function LockSmith.Dashboard:InitializeStats(content)
+function LockSmithPro.Dashboard:InitializeStats(content)
     -- Create a scroll frame for ALL stats content
     local statsScrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
     statsScrollFrame:SetPoint("TOPLEFT", content, "TOPLEFT", 5, -5)
@@ -799,32 +877,32 @@ function LockSmith.Dashboard:InitializeStats(content)
     content.statsScrollChild = scrollChild
 
     -- Main stats cards (now parented to scrollChild)
-    local card1 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Total Gold", "totalGold")
+    local card1 = LockSmithPro.Dashboard:CreateStatCard(scrollChild, "Total Gold", "totalGold")
     card1:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, -10)
     card1:SetSize(180, 70)
     content.statCard1 = card1
 
-    local card2 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Total Jobs", "totalJobs")
+    local card2 = LockSmithPro.Dashboard:CreateStatCard(scrollChild, "Total Jobs", "totalJobs")
     card2:SetPoint("LEFT", card1, "RIGHT", 10, 0)
     card2:SetSize(180, 70)
     content.statCard2 = card2
 
-    local card3 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Total Boxes", "totalBoxes")
+    local card3 = LockSmithPro.Dashboard:CreateStatCard(scrollChild, "Total Boxes", "totalBoxes")
     card3:SetPoint("TOPLEFT", card1, "BOTTOMLEFT", 0, -10)
     card3:SetSize(180, 70)
     content.statCard3 = card3
 
-    local card4 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Average Tip", "avgTip")
+    local card4 = LockSmithPro.Dashboard:CreateStatCard(scrollChild, "Average Tip", "avgTip")
     card4:SetPoint("LEFT", card3, "RIGHT", 10, 0)
     card4:SetSize(180, 70)
     content.statCard4 = card4
 
-    local card5 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Last Session", "lastSession")
+    local card5 = LockSmithPro.Dashboard:CreateStatCard(scrollChild, "Last Session", "lastSession")
     card5:SetPoint("TOPLEFT", card3, "BOTTOMLEFT", 0, -10)
     card5:SetSize(180, 70)
     content.statCard5 = card5
 
-    local card6 = LockSmith.Dashboard:CreateStatCard(scrollChild, "Best Session", "bestSession")
+    local card6 = LockSmithPro.Dashboard:CreateStatCard(scrollChild, "Best Session", "bestSession")
     card6:SetPoint("LEFT", card5, "RIGHT", 10, 0)
     card6:SetSize(180, 70)
     content.statCard6 = card6
@@ -841,6 +919,7 @@ function LockSmith.Dashboard:InitializeStats(content)
     boxListFrame:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -10, -280)
     boxListFrame:SetHeight(1) -- Will grow dynamically
     content.boxListFrame = boxListFrame
+    content.boxListLines = {}
 
     -- Reset button at bottom of scroll content
     local resetBtn = CreateFrame("Button", nil, content, "GameMenuButtonTemplate")
@@ -848,41 +927,41 @@ function LockSmith.Dashboard:InitializeStats(content)
     resetBtn:SetPoint("BOTTOM", content, "BOTTOM", 0, 10)
     resetBtn:SetText("Reset Stats")
     resetBtn:SetScript("OnClick", function()
-        StaticPopupDialogs["LOCKSMITH_RESET_STATS"] = {
+        StaticPopupDialogs["LockSmithPro_RESET_STATS"] = {
             text = "Are you sure you want to reset all statistics? This cannot be undone!",
             button1 = "Yes, Reset",
             button2 = "Cancel",
             OnAccept = function()
-                LockSmith.Statistics:ResetStats()
-                LockSmith.Dashboard:UpdateStatsTab()
-                print("|cff00ff00LockSmith:|r Statistics reset!")
+                LockSmithPro.Statistics:ResetStats()
+                LockSmithPro.Dashboard:UpdateStatsTab()
+                print("|cff00ff00LockSmithPro:|r Statistics reset!")
             end,
             timeout = 0,
             whileDead = true,
             hideOnEscape = true,
             preferredIndex = 3,
         }
-        StaticPopup_Show("LOCKSMITH_RESET_STATS")
+        StaticPopup_Show("LockSmithPro_RESET_STATS")
     end)
 
     -- Initial update
-    LockSmith.Dashboard:UpdateStatsTab()
+    LockSmithPro.Dashboard:UpdateStatsTab()
 
     -- Set up update ticker for skill level (every 5 seconds when tab visible)
     tabs.stats.onShow = function()
         -- Update layout based on current window width
         if mainFrame then
-            LockSmith.Dashboard:UpdateStatsLayout(mainFrame:GetWidth(), mainFrame:GetHeight())
+            LockSmithPro.Dashboard:UpdateStatsLayout(mainFrame:GetWidth(), mainFrame:GetHeight())
         end
 
         -- Update stat values
-        LockSmith.Dashboard:UpdateStatsTab()
+        LockSmithPro.Dashboard:UpdateStatsTab()
 
         if not tabs.stats.ticker then
             tabs.stats.ticker = C_Timer.NewTicker(5, function()
                 if currentTab == "stats" then
                     -- Update skill level in stat cards
-                    LockSmith.Dashboard:UpdateStatsTab()
+                    LockSmithPro.Dashboard:UpdateStatsTab()
                 end
             end)
         end
@@ -890,7 +969,7 @@ function LockSmith.Dashboard:InitializeStats(content)
 end
 
 -- Create a stat card
-function LockSmith.Dashboard:CreateStatCard(parent, title, statType)
+function LockSmithPro.Dashboard:CreateStatCard(parent, title, statType)
     local card = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     card:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -917,7 +996,7 @@ function LockSmith.Dashboard:CreateStatCard(parent, title, statType)
 end
 
 -- Update stats tab
-function LockSmith.Dashboard:UpdateStatsTab()
+function LockSmithPro.Dashboard:UpdateStatsTab()
     if not tabs.stats or not tabs.stats.content then return end
 
     local content = tabs.stats.content
@@ -930,17 +1009,17 @@ function LockSmith.Dashboard:UpdateStatsTab()
             local statType = card.statType
 
             if statType == "totalGold" then
-                value = LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold or 0)
+                value = LockSmithPro.Utils:FormatGold(LockSmithProDB.stats.totalGold or 0)
             elseif statType == "totalJobs" then
-                value = tostring(LockSmithDB.stats.totalJobs or 0)
+                value = tostring(LockSmithProDB.stats.totalJobs or 0)
             elseif statType == "totalBoxes" then
-                value = tostring(LockSmithDB.stats.totalBoxes or 0)
+                value = tostring(LockSmithProDB.stats.totalBoxes or 0)
             elseif statType == "avgTip" then
-                value = LockSmith.Utils:FormatGold(LockSmith.Statistics:GetAverageTip())
+                value = LockSmithPro.Utils:FormatGold(LockSmithPro.Statistics:GetAverageTip())
             elseif statType == "lastSession" then
-                value = LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold or 0)
+                value = LockSmithPro.Utils:FormatGold(LockSmithProDB.stats.lastSessionGold or 0)
             elseif statType == "bestSession" then
-                value = LockSmith.Utils:FormatGold(LockSmithDB.stats.bestSessionGold or 0)
+                value = LockSmithPro.Utils:FormatGold(LockSmithProDB.stats.bestSessionGold or 0)
             end
 
             card.valueText:SetText(value)
@@ -948,26 +1027,31 @@ function LockSmith.Dashboard:UpdateStatsTab()
     end
 
     -- Update per-box stats
-    LockSmith.Dashboard:UpdateBoxStats()
+    LockSmithPro.Dashboard:UpdateBoxStats()
 end
 
 -- Update box stats list
-function LockSmith.Dashboard:UpdateBoxStats()
+function LockSmithPro.Dashboard:UpdateBoxStats()
     if not tabs.stats or not tabs.stats.content then return end
 
     local boxListFrame = tabs.stats.content.boxListFrame
     local scrollChild = tabs.stats.content.statsScrollChild
     if not boxListFrame or not scrollChild then return end
 
-    -- Clear existing
-    for _, child in ipairs({boxListFrame:GetChildren()}) do
-        child:Hide()
-        child:SetParent(nil)
+    local boxListLines = tabs.stats.content.boxListLines
+    if not boxListLines then
+        boxListLines = {}
+        tabs.stats.content.boxListLines = boxListLines
+    end
+
+    -- Hide existing lines (FontStrings are regions, not children frames)
+    for _, line in ipairs(boxListLines) do
+        line:Hide()
     end
 
     local yOffset = -5
     local lineHeight = 20
-    local counts = LockSmithDB.stats.boxesOpened or {}
+    local counts = LockSmithProDB.stats.boxesOpened or {}
 
     -- Get sorted box list
     local boxList = {}
@@ -981,15 +1065,21 @@ function LockSmith.Dashboard:UpdateBoxStats()
     table.sort(boxList, function(a, b) return a.count > b.count end)
 
     -- Create text lines
-    for _, boxData in ipairs(boxList) do
-        local data = LockSmith.BoxDatabase[boxData.key]
+    for i, boxData in ipairs(boxList) do
+        local data = LockSmithPro.BoxDatabase[boxData.key]
         local skill = data and data.skill or 0
         local name = data and data.name or boxData.key
         local label = (skill > 0 and ("|cffffcc00" .. skill .. "|r - ") or "") .. name
 
-        local line = boxListFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local line = boxListLines[i]
+        if not line then
+            line = boxListFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            boxListLines[i] = line
+        end
+        line:ClearAllPoints()
         line:SetPoint("TOPLEFT", boxListFrame, "TOPLEFT", 10, yOffset)
         line:SetText(label .. ": |cff00ff00" .. boxData.count .. "|r")
+        line:Show()
 
         yOffset = yOffset - lineHeight
     end
@@ -1004,7 +1094,7 @@ function LockSmith.Dashboard:UpdateBoxStats()
 end
 
 -- Update stats tab layout for responsive design
-function LockSmith.Dashboard:UpdateStatsLayout(width, _)
+function LockSmithPro.Dashboard:UpdateStatsLayout(width, _)
     if not tabs.stats or not tabs.stats.content then return end
 
     local content = tabs.stats.content
@@ -1091,25 +1181,158 @@ function LockSmith.Dashboard:UpdateStatsLayout(width, _)
     end
 
     -- Refresh box stats to recalculate scroll child height
-    LockSmith.Dashboard:UpdateBoxStats()
+    LockSmithPro.Dashboard:UpdateBoxStats()
 end
 
 -- ================================
 -- Settings Tab
 -- ================================
 
-function LockSmith.Dashboard:InitializeSettings(content)
+-- Helper function to create a multi-line scrollable editbox with auto-sizing
+local function CreateMultiLineEditBox(parent, name, maxHeight, text, onTextChanged, parentScrollFrame)
+    local minHeight = 30  -- Minimum height (single line)
+
+    local frame = CreateFrame("ScrollFrame", name .. "Scroll", parent, "UIPanelScrollFrameTemplate")
+    -- Use anchors for responsive width
+    frame:SetPoint("LEFT", parent, "LEFT", 10, 0)
+    frame:SetPoint("RIGHT", parent, "RIGHT", -10, 0)
+
+    -- Enable mouse wheel scroll passthrough to parent scroll frame
+    if parentScrollFrame then
+        frame:EnableMouseWheel(true)
+        frame:SetScript("OnMouseWheel", function(self, delta)
+            -- Check if we're at the scroll limits
+            local scrollRange = self:GetVerticalScrollRange()
+            local currentScroll = self:GetVerticalScroll()
+
+            -- If scrolling up and already at top, OR scrolling down and already at bottom
+            if (delta > 0 and currentScroll <= 0) or (delta < 0 and currentScroll >= scrollRange) or scrollRange == 0 then
+                -- Pass the scroll to parent
+                local parentScroll = parentScrollFrame:GetVerticalScroll()
+                local parentRange = parentScrollFrame:GetVerticalScrollRange()
+                local newScroll = math.max(0, math.min(parentRange, parentScroll - (delta * 20)))
+                parentScrollFrame:SetVerticalScroll(newScroll)
+            else
+                -- Scroll within this frame
+                local newScroll = math.max(0, math.min(scrollRange, currentScroll - (delta * 20)))
+                self:SetVerticalScroll(newScroll)
+            end
+        end)
+    end
+
+    local editBox = CreateFrame("EditBox", name, frame)
+    editBox:SetMultiLine(true)
+    editBox:SetFontObject(ChatFontNormal)
+    editBox:SetAutoFocus(false)
+    editBox:SetText(text or "")
+    editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+
+    -- Clear focus when clicking outside the editBox
+    editBox:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0) -- Clear text selection
+    end)
+
+    frame:SetScrollChild(editBox)
+
+    -- Update editBox width when frame width changes
+    local function UpdateEditBoxWidth()
+        local frameWidth = frame:GetWidth()
+        if frameWidth > 0 then
+            editBox:SetWidth(frameWidth - 20)
+        end
+    end
+
+    frame:SetScript("OnSizeChanged", UpdateEditBoxWidth)
+    UpdateEditBoxWidth()
+
+    -- Background texture
+    local bg = frame:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints(frame)
+    bg:SetColorTexture(0, 0, 0, 0.5)
+
+    -- Function to update frame height based on content
+    local function UpdateHeight()
+        -- Force layout update
+        editBox:SetWidth(editBox:GetWidth())
+
+        local textHeight = editBox:GetHeight()
+        local scrollbar = _G[frame:GetName() .. "ScrollBar"]
+
+        -- Calculate appropriate height (clamp between min and max)
+        local targetHeight = math.max(minHeight, math.min(textHeight + 10, maxHeight))
+        frame:SetHeight(targetHeight)
+
+        -- Auto-hide scrollbar when not needed
+        if scrollbar then
+            -- Check vertical scroll range to determine if scrollbar is needed
+            local range = frame:GetVerticalScrollRange()
+            if range > 0 then
+                scrollbar:Show()
+            else
+                scrollbar:Hide()
+                -- Reset scroll position when hiding scrollbar
+                frame:SetVerticalScroll(0)
+            end
+        end
+    end
+
+    -- Update height when text changes
+    editBox:SetScript("OnTextChanged", function(self, userInput)
+        if onTextChanged then
+            onTextChanged(self)
+        end
+        -- Delay update to next frame to allow text to render
+        if userInput then
+            UpdateHeight()
+        end
+    end)
+
+    -- Update height when cursor moves (handles line wrapping)
+    editBox:SetScript("OnCursorChanged", function()
+        UpdateHeight()
+    end)
+
+    -- Initial height update
+    frame:SetScript("OnShow", function()
+        UpdateHeight()
+    end)
+
+    -- Use OnUpdate for initial setup (runs once after frame is shown)
+    local hasInitialized = false
+    frame:SetScript("OnUpdate", function(self)
+        if not hasInitialized then
+            hasInitialized = true
+            UpdateHeight()
+            self:SetScript("OnUpdate", nil) -- Remove OnUpdate after first run
+        end
+    end)
+
+    return frame, editBox
+end
+
+function LockSmithPro.Dashboard:InitializeSettings(content)
     -- Scroll frame for settings
     local scrollFrame = CreateFrame("ScrollFrame", nil, content, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", content, "TOPLEFT", 5, -5)
     scrollFrame:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", -30, 5)
 
     local scrollChild = CreateFrame("Frame", nil, scrollFrame)
-    scrollChild:SetWidth(350) -- Set width explicitly
+    scrollChild:SetWidth(1) -- Will be updated dynamically
     scrollFrame:SetScrollChild(scrollChild)
 
     -- Ensure visibility
     scrollChild:Show()
+
+    -- Function to update scrollChild width based on available space
+    local function UpdateScrollChildWidth()
+        local availableWidth = scrollFrame:GetWidth() - 20 -- Account for scrollbar
+        scrollChild:SetWidth(math.max(300, availableWidth)) -- Minimum 300px
+    end
+
+    -- Update width when shown and when parent resizes
+    scrollFrame:SetScript("OnShow", UpdateScrollChildWidth)
+    scrollFrame:SetScript("OnSizeChanged", UpdateScrollChildWidth)
+    UpdateScrollChildWidth()
 
     local yOffset = -10
 
@@ -1117,6 +1340,9 @@ function LockSmith.Dashboard:InitializeSettings(content)
     local function CreateHeader(text)
         local header = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         header:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+        header:SetPoint("RIGHT", scrollChild, "RIGHT", -10, 0)
+        header:SetJustifyH("LEFT")
+        header:SetWordWrap(true)
         header:SetText("|cffffcc00" .. text .. "|r")
         yOffset = yOffset - 25
         return header
@@ -1124,7 +1350,7 @@ function LockSmith.Dashboard:InitializeSettings(content)
 
     -- Helper function to create checkbox
     local function CreateCheckbox(label, dbKey, nestedTable, nestedKey)
-        local checkbox = CreateFrame("CheckButton", "LockSmithSettingsCB" .. math.random(1000000), scrollChild, "ChatConfigCheckButtonTemplate")
+        local checkbox = CreateFrame("CheckButton", "LockSmithProSettingsCB" .. math.random(1000000), scrollChild, "ChatConfigCheckButtonTemplate")
         checkbox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
 
         -- Set text (checkbox template creates a Text fontstring)
@@ -1134,19 +1360,19 @@ function LockSmith.Dashboard:InitializeSettings(content)
         end
 
         if nestedTable and nestedKey then
-            -- Nested table value (e.g., LockSmithDB.adChannels.trade)
-            checkbox:SetChecked(LockSmithDB[nestedTable] and LockSmithDB[nestedTable][nestedKey])
+            -- Nested table value (e.g., LockSmithProDB.adChannels.trade)
+            checkbox:SetChecked(LockSmithProDB[nestedTable] and LockSmithProDB[nestedTable][nestedKey])
             checkbox:SetScript("OnClick", function(self)
-                if not LockSmithDB[nestedTable] then
-                    LockSmithDB[nestedTable] = {}
+                if not LockSmithProDB[nestedTable] then
+                    LockSmithProDB[nestedTable] = {}
                 end
-                LockSmithDB[nestedTable][nestedKey] = self:GetChecked()
+                LockSmithProDB[nestedTable][nestedKey] = self:GetChecked()
             end)
         else
-            -- Simple value (e.g., LockSmithDB.monitorTrade)
-            checkbox:SetChecked(LockSmithDB[dbKey])
+            -- Simple value (e.g., LockSmithProDB.monitorTrade)
+            checkbox:SetChecked(LockSmithProDB[dbKey])
             checkbox:SetScript("OnClick", function(self)
-                LockSmithDB[dbKey] = self:GetChecked()
+                LockSmithProDB[dbKey] = self:GetChecked()
             end)
         end
 
@@ -1159,44 +1385,81 @@ function LockSmith.Dashboard:InitializeSettings(content)
     CreateCheckbox("Monitor Trade Channel", "monitorTrade")
     CreateCheckbox("Monitor General Channel", "monitorGeneral")
     CreateCheckbox("Monitor LFG Channel", "monitorLFG")
+    CreateCheckbox("Monitor Say Channel", "monitorSay")
     CreateCheckbox("Monitor Whispers", "monitorWhisper")
+    yOffset = yOffset - 10
+
+    -- UI & Sound Settings
+    CreateHeader("UI & Sound")
     CreateCheckbox("Play Sound Effects", "playSoundEffects")
     CreateCheckbox("Auto-mark Self with Star (Party Leader)", "autoMarkSelf")
     CreateCheckbox("Auto-mark Customers with Raid Icons", "autoMarkCustomers")
     yOffset = yOffset - 10
+
+    -- Job Board Filters
+    CreateHeader("Job Board Filters")
+
+    local includeLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    includeLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    includeLabel:SetPoint("RIGHT", scrollChild, "RIGHT", -10, 0)
+    includeLabel:SetJustifyH("LEFT")
+    includeLabel:SetWordWrap(true)
+    includeLabel:SetText("|cff00ff00Include Words|r (comma-separated, message must contain at least one):")
+    yOffset = yOffset - 30
+
+    local includeFrame = CreateMultiLineEditBox(scrollChild, "LockSmithProIncludeBox", 60,
+        LockSmithProDB.includeKeywords or "",
+        function(self) LockSmithProDB.includeKeywords = self:GetText() end, scrollFrame)
+    includeFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    yOffset = yOffset - 70
+
+    local excludeLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    excludeLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    excludeLabel:SetPoint("RIGHT", scrollChild, "RIGHT", -10, 0)
+    excludeLabel:SetJustifyH("LEFT")
+    excludeLabel:SetWordWrap(true)
+    excludeLabel:SetText("|cffff0000Exclude Words|r (comma-separated, message must NOT contain any):")
+    yOffset = yOffset - 30
+
+    local excludeFrame = CreateMultiLineEditBox(scrollChild, "LockSmithProExcludeBox", 60,
+        LockSmithProDB.excludeKeywords or "",
+        function(self) LockSmithProDB.excludeKeywords = self:GetText() end, scrollFrame)
+    excludeFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    yOffset = yOffset - 80
 
     -- Advertisement Settings
     CreateHeader("Advertisement")
 
     local adLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     adLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    adLabel:SetPoint("RIGHT", scrollChild, "RIGHT", -10, 0)
+    adLabel:SetJustifyH("LEFT")
+    adLabel:SetWordWrap(true)
     adLabel:SetText("Advertisement Message:")
     yOffset = yOffset - 20
 
-    local adMsgBox = CreateFrame("EditBox", "LockSmithAdMsgBox", scrollChild, "InputBoxTemplate")
-    adMsgBox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
-    adMsgBox:SetSize(340, 30)
-    adMsgBox:SetText(LockSmithDB.adMessage or "")
-    adMsgBox:SetAutoFocus(false)
-    adMsgBox:SetScript("OnTextChanged", function(self)
-        LockSmithDB.adMessage = self:GetText()
-    end)
-    adMsgBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    yOffset = yOffset - 40
+    local adMsgFrame, adMsgBox = CreateMultiLineEditBox(scrollChild, "LockSmithProAdMsgBox", 60,
+        LockSmithProDB.adMessage or "",
+        function(self) LockSmithProDB.adMessage = self:GetText() end, scrollFrame)
+    adMsgFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    yOffset = yOffset - 70
 
     local setDefaultBtn = CreateFrame("Button", nil, scrollChild, "GameMenuButtonTemplate")
     setDefaultBtn:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
     setDefaultBtn:SetSize(120, 25)
     setDefaultBtn:SetText("Set Default")
     setDefaultBtn:SetScript("OnClick", function()
-        local default = "LockSmith - Rogue lockpicking service available! Free picks, tips appreciated {rt1}"
-        LockSmithDB.adMessage = default
+        local default = "LockSmithPro - Rogue lockpicking service available! Free picks, tips appreciated {rt1}"
+        LockSmithProDB.adMessage = default
         adMsgBox:SetText(default)
     end)
     yOffset = yOffset - 35
 
     local adChannelLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     adChannelLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    adChannelLabel:SetPoint("RIGHT", scrollChild, "RIGHT", -10, 0)
+    adChannelLabel:SetJustifyH("LEFT")
+    adChannelLabel:SetWordWrap(true)
     adChannelLabel:SetText("Send Advertisement To:")
     yOffset = yOffset - 20
 
@@ -1220,16 +1483,16 @@ function LockSmith.Dashboard:InitializeSettings(content)
 
     local timerValue = timerContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     timerValue:SetPoint("CENTER", timerContainer, "CENTER", 0, 0)
-    timerValue:SetText("|cff00ff00" .. (LockSmithDB.adTimerInterval or 60) .. "s|r")
+    timerValue:SetText("|cff00ff00" .. (LockSmithProDB.adTimerInterval or 60) .. "s|r")
 
     local decreaseBtn = CreateFrame("Button", nil, timerContainer, "GameMenuButtonTemplate")
     decreaseBtn:SetSize(30, 25)
     decreaseBtn:SetPoint("RIGHT", timerValue, "LEFT", -10, 0)
     decreaseBtn:SetText("-")
     decreaseBtn:SetScript("OnClick", function()
-        local current = LockSmithDB.adTimerInterval or 60
+        local current = LockSmithProDB.adTimerInterval or 60
         local new = math.max(30, current - 10)
-        LockSmithDB.adTimerInterval = new
+        LockSmithProDB.adTimerInterval = new
         timerValue:SetText("|cff00ff00" .. new .. "s|r")
     end)
 
@@ -1238,9 +1501,9 @@ function LockSmith.Dashboard:InitializeSettings(content)
     increaseBtn:SetPoint("LEFT", timerValue, "RIGHT", 10, 0)
     increaseBtn:SetText("+")
     increaseBtn:SetScript("OnClick", function()
-        local current = LockSmithDB.adTimerInterval or 60
+        local current = LockSmithProDB.adTimerInterval or 60
         local new = math.min(600, current + 10)
-        LockSmithDB.adTimerInterval = new
+        LockSmithProDB.adTimerInterval = new
         timerValue:SetText("|cff00ff00" .. new .. "s|r")
     end)
 
@@ -1255,42 +1518,41 @@ function LockSmith.Dashboard:InitializeSettings(content)
 
     local lowSkillLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     lowSkillLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    lowSkillLabel:SetPoint("RIGHT", scrollChild, "RIGHT", -10, 0)
+    lowSkillLabel:SetJustifyH("LEFT")
+    lowSkillLabel:SetWordWrap(true)
     lowSkillLabel:SetText("Low Skill Message:")
     yOffset = yOffset - 20
 
-    local lowSkillBox = CreateFrame("EditBox", "LockSmithLowSkillBox", scrollChild, "InputBoxTemplate")
-    lowSkillBox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
-    lowSkillBox:SetSize(340, 30)
-    lowSkillBox:SetText(LockSmithDB.lowSkillMessage or "")
-    lowSkillBox:SetAutoFocus(false)
-    lowSkillBox:SetScript("OnTextChanged", function(self)
-        LockSmithDB.lowSkillMessage = self:GetText()
-    end)
-    lowSkillBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    yOffset = yOffset - 40
+    local lowSkillFrame, lowSkillBox = CreateMultiLineEditBox(scrollChild, "LockSmithProLowSkillBox", 60,
+        LockSmithProDB.lowSkillMessage or "",
+        function(self) LockSmithProDB.lowSkillMessage = self:GetText() end, scrollFrame)
+    lowSkillFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    yOffset = yOffset - 70
 
     CreateCheckbox("Thank-You Whisper (after tip)", "thankYouWhisper")
     yOffset = yOffset - 5
 
     local thankYouLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     thankYouLabel:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    thankYouLabel:SetPoint("RIGHT", scrollChild, "RIGHT", -10, 0)
+    thankYouLabel:SetJustifyH("LEFT")
+    thankYouLabel:SetWordWrap(true)
     thankYouLabel:SetText("Thank-You Message:")
     yOffset = yOffset - 20
 
-    local thankYouBox = CreateFrame("EditBox", "LockSmithThankYouBox", scrollChild, "InputBoxTemplate")
-    thankYouBox:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
-    thankYouBox:SetSize(340, 30)
-    thankYouBox:SetText(LockSmithDB.thankYouMessage or "")
-    thankYouBox:SetAutoFocus(false)
-    thankYouBox:SetScript("OnTextChanged", function(self)
-        LockSmithDB.thankYouMessage = self:GetText()
-    end)
-    thankYouBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    yOffset = yOffset - 40
+    local thankYouFrame, thankYouBox = CreateMultiLineEditBox(scrollChild, "LockSmithProThankYouBox", 60,
+        LockSmithProDB.thankYouMessage or "",
+        function(self) LockSmithProDB.thankYouMessage = self:GetText() end, scrollFrame)
+    thankYouFrame:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
+    yOffset = yOffset - 70
 
     local helpText = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     helpText:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 10, yOffset)
-    helpText:SetText("|cffccccccVariables: %CURRENT%, %REQUIRED%, %TIP%|r")
+    helpText:SetPoint("RIGHT", scrollChild, "RIGHT", -10, 0)
+    helpText:SetJustifyH("LEFT")
+    helpText:SetWordWrap(true)
+    helpText:SetText("|cffccccccVariables: %CURRENT%, %REQUIRED%, %TIP%, %SPELL_LINK%|r")
     yOffset = yOffset - 30
 
     -- Update scroll child height

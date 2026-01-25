@@ -1,8 +1,8 @@
 -- Utils.lua
--- Utility functions for LockSmith
+-- Utility functions for LockSmithPro
 
-LockSmith = LockSmith or {}
-LockSmith.Utils = {}
+LockSmithPro = LockSmithPro or {}
+LockSmithPro.Utils = {}
 
 -- ================================
 -- Timer System
@@ -11,7 +11,7 @@ LockSmith.Utils = {}
 local activeTimers = {}
 local nextTimerID = 1
 
-function LockSmith.Utils:ScheduleRepeatingTimer(callback, interval)
+function LockSmithPro.Utils:ScheduleRepeatingTimer(callback, interval)
     local timerID = nextTimerID
     nextTimerID = nextTimerID + 1
 
@@ -30,7 +30,7 @@ function LockSmith.Utils:ScheduleRepeatingTimer(callback, interval)
     return timerID
 end
 
-function LockSmith.Utils:CancelTimer(timerID)
+function LockSmithPro.Utils:CancelTimer(timerID)
     if activeTimers[timerID] then
         activeTimers[timerID]:SetScript("OnUpdate", nil)
         activeTimers[timerID] = nil
@@ -41,7 +41,7 @@ end
 -- Gold Formatting
 -- ================================
 
-function LockSmith.Utils:FormatGold(copper)
+function LockSmithPro.Utils:FormatGold(copper)
     if copper == 0 then return "0c" end
 
     local gold = math.floor(copper / 10000)
@@ -71,7 +71,7 @@ end
 local lastMessageTime = {}
 local MESSAGE_THROTTLE = 10 -- seconds between messages to same target
 
-function LockSmith.Utils:CanSendMessage(target)
+function LockSmithPro.Utils:CanSendMessage(target)
     local now = GetTime()
     if not lastMessageTime[target] or (now - lastMessageTime[target]) > MESSAGE_THROTTLE then
         lastMessageTime[target] = now
@@ -80,7 +80,7 @@ function LockSmith.Utils:CanSendMessage(target)
     return false
 end
 
-function LockSmith.Utils:SendThrottledWhisper(target, message)
+function LockSmithPro.Utils:SendThrottledWhisper(target, message)
     if self:CanSendMessage(target) then
         SendChatMessage(message, "WHISPER", nil, target)
         return true
@@ -92,7 +92,7 @@ end
 -- Channel Helpers
 -- ================================
 
-function LockSmith.Utils:GetChannelID(channelName)
+function LockSmithPro.Utils:GetChannelID(channelName)
     local id = GetChannelName(channelName)
     if id and id > 0 then
         return id
@@ -100,7 +100,7 @@ function LockSmith.Utils:GetChannelID(channelName)
     return nil
 end
 
-function LockSmith.Utils:SendToChannel(message, channelName)
+function LockSmithPro.Utils:SendToChannel(message, channelName)
     local channelID = self:GetChannelID(channelName)
     if channelID then
         SendChatMessage(message, "CHANNEL", nil, channelID)
@@ -110,9 +110,14 @@ function LockSmith.Utils:SendToChannel(message, channelName)
 end
 
 -- Invite helper with API fallbacks
-function LockSmith.Utils:InvitePlayer(target)
+function LockSmithPro.Utils:InvitePlayer(target)
     if not target or target == "" then
         return false
+    end
+
+    -- Notify ChatMonitor that we're sending an invite
+    if LockSmithPro.ChatMonitor and LockSmithPro.ChatMonitor.OnInviteSent then
+        LockSmithPro.ChatMonitor:OnInviteSent(target)
     end
 
     if C_PartyInfo and C_PartyInfo.InviteUnit then
@@ -147,7 +152,7 @@ local markerFrame = CreateFrame("Frame")
 -- Set raid marker on player
 local function SetPlayerRaidMarker()
     -- SetRaidTarget: 1=Star, 2=Circle, 3=Diamond, 4=Triangle, 5=Moon, 6=Square, 7=Cross, 8=Skull
-    if SetRaidTarget and LockSmithDB and LockSmithDB.autoMarkSelf then
+    if SetRaidTarget and LockSmithProDB and LockSmithProDB.autoMarkSelf then
         SetRaidTarget("player", 1)  -- 1 = Star
     end
 end
@@ -170,7 +175,7 @@ end
 -- Set raid marker on a customer
 local function SetCustomerRaidMarker(unitID, playerName)
     if not SetRaidTarget then return end
-    if not LockSmithDB or not LockSmithDB.autoMarkCustomers then return end
+    if not LockSmithProDB or not LockSmithProDB.autoMarkCustomers then return end
 
     local normalized = NormalizePlayerName(playerName)
     if normalized == "" then return end
@@ -192,7 +197,7 @@ end
 
 -- Mark all current party/raid members
 local function MarkAllCustomers()
-    if not LockSmithDB or not LockSmithDB.autoMarkCustomers then return end
+    if not LockSmithProDB or not LockSmithProDB.autoMarkCustomers then return end
 
     local playerName = UnitName("player")
     local playerNormalized = NormalizePlayerName(playerName)
@@ -266,7 +271,7 @@ markerFrame:SetScript("OnEvent", function(self, event)
         markedPlayers = {}
         nextCustomerIconIndex = 1
     elseif event == "GROUP_ROSTER_UPDATE" then
-        if LockSmith:IsRunning() then
+        if LockSmithPro:IsRunning() then
             CheckAndSetMarker()
         end
     end

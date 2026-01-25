@@ -1,8 +1,8 @@
 -- Notification.lua
 -- Notification popup UI
 
-LockSmith = LockSmith or {}
-LockSmith.UI = LockSmith.UI or {}
+LockSmithPro = LockSmithPro or {}
+LockSmithPro.UI = LockSmithPro.UI or {}
 
 local activeNotification = nil
 local activeAdNotification = nil
@@ -52,7 +52,7 @@ end
 
 local function PlayNotificationSound()
     -- Check if sound effects are enabled
-    if not LockSmithDB or not LockSmithDB.playSoundEffects then
+    if not LockSmithProDB or not LockSmithProDB.playSoundEffects then
         return
     end
 
@@ -67,7 +67,7 @@ local function PlayNotificationSound()
 end
 
 local function CreateAdReadyPopup()
-    local frame = CreateFrame("Frame", "LockSmithAdReadyPopup", UIParent, "DialogBoxFrame")
+    local frame = CreateFrame("Frame", "LockSmithProAdReadyPopup", UIParent, "DialogBoxFrame")
     frame:SetSize(380, 170)
     frame:SetPoint("TOP", 0, -140)
     frame:SetFrameStrata("DIALOG")
@@ -94,21 +94,21 @@ local function CreateAdReadyPopup()
     frame.message = message
 
     -- Send button (left)
-    local sendBtn = CreateFrame("Button", "LockSmithAdReadySendBtn", frame, "GameMenuButtonTemplate")
+    local sendBtn = CreateFrame("Button", "LockSmithProAdReadySendBtn", frame, "GameMenuButtonTemplate")
     sendBtn:SetSize(100, 25)
     sendBtn:SetPoint("BOTTOMLEFT", 25, 20)
     sendBtn:SetText("Send Now")
     frame.sendBtn = sendBtn
 
     -- Stop button (middle)
-    local stopBtn = CreateFrame("Button", "LockSmithAdReadyStopBtn", frame, "GameMenuButtonTemplate")
+    local stopBtn = CreateFrame("Button", "LockSmithProAdReadyStopBtn", frame, "GameMenuButtonTemplate")
     stopBtn:SetSize(100, 25)
     stopBtn:SetPoint("BOTTOM", 0, 20)
     stopBtn:SetText("Stop")
     frame.stopBtn = stopBtn
 
     -- Dismiss button (right)
-    local dismissBtn = CreateFrame("Button", "LockSmithAdReadyDismissBtn", frame, "GameMenuButtonTemplate")
+    local dismissBtn = CreateFrame("Button", "LockSmithProAdReadyDismissBtn", frame, "GameMenuButtonTemplate")
     dismissBtn:SetSize(100, 25)
     dismissBtn:SetPoint("BOTTOMRIGHT", -25, 20)
     dismissBtn:SetText("Dismiss")
@@ -120,7 +120,7 @@ end
 -- Create notification popup
 local function CreateNotificationPopup()
     -- Main frame
-    local frame = CreateFrame("Frame", "LockSmithNotificationPopup", UIParent, "DialogBoxFrame")
+    local frame = CreateFrame("Frame", "LockSmithProNotificationPopup", UIParent, "DialogBoxFrame")
     frame:SetSize(400, 250)
     frame:SetPoint("TOP", 0, -100)
     frame:SetFrameStrata("DIALOG")
@@ -199,28 +199,28 @@ local function CreateNotificationPopup()
     local btnY2 = 15  -- Bottom row
 
     -- Invite button (top left)
-    local inviteBtn = CreateFrame("Button", "LockSmithNotifyInviteBtn", frame, "GameMenuButtonTemplate")
+    local inviteBtn = CreateFrame("Button", "LockSmithProNotifyInviteBtn", frame, "GameMenuButtonTemplate")
     inviteBtn:SetSize(90, 25)
     inviteBtn:SetPoint("BOTTOMLEFT", 25, btnY1)
     inviteBtn:SetText("Invite")
     frame.inviteBtn = inviteBtn
 
     -- Whisper button (top right)
-    local whisperBtn = CreateFrame("Button", "LockSmithNotifyWhisperBtn", frame, "GameMenuButtonTemplate")
+    local whisperBtn = CreateFrame("Button", "LockSmithProNotifyWhisperBtn", frame, "GameMenuButtonTemplate")
     whisperBtn:SetSize(90, 25)
     whisperBtn:SetPoint("BOTTOMRIGHT", -25, btnY1)
     whisperBtn:SetText("Whisper")
     frame.whisperBtn = whisperBtn
 
     -- Ignore Session button (bottom left)
-    local ignoreSessionBtn = CreateFrame("Button", "LockSmithNotifyIgnoreSessionBtn", frame, "GameMenuButtonTemplate")
+    local ignoreSessionBtn = CreateFrame("Button", "LockSmithProNotifyIgnoreSessionBtn", frame, "GameMenuButtonTemplate")
     ignoreSessionBtn:SetSize(90, 25)
     ignoreSessionBtn:SetPoint("BOTTOMLEFT", 25, btnY2)
     ignoreSessionBtn:SetText("Ignore Session")
     frame.ignoreSessionBtn = ignoreSessionBtn
 
     -- Dismiss button (bottom right)
-    local ignoreBtn = CreateFrame("Button", "LockSmithNotifyIgnoreBtn", frame, "GameMenuButtonTemplate")
+    local ignoreBtn = CreateFrame("Button", "LockSmithProNotifyIgnoreBtn", frame, "GameMenuButtonTemplate")
     ignoreBtn:SetSize(90, 25)
     ignoreBtn:SetPoint("BOTTOMRIGHT", -25, btnY2)
     ignoreBtn:SetText("Dismiss")
@@ -230,7 +230,7 @@ local function CreateNotificationPopup()
 end
 
 -- Show notification popup
-function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requiredSkill, message)
+function LockSmithPro.UI:ShowNotificationPopup(sender, boxData, channelName, requiredSkill, message)
     -- Create popup if it doesn't exist
     if not activeNotification then
         activeNotification = CreateNotificationPopup()
@@ -256,15 +256,15 @@ function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requir
         activeNotification.skillInfo:SetText("|cffffffff Required Skill:|r Unknown")
     end
 
-    local currentSkill, maxSkill = LockSmith.Skills:GetLockpickingSkill()
+    local currentSkill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
     activeNotification.yourSkill:SetText("|cff00ff00 Your Skill:|r " .. currentSkill .. "/" .. maxSkill)
 
     -- Setup button actions
     activeNotification.inviteBtn:SetScript("OnClick", function(self)
-        if LockSmith.Utils and LockSmith.Utils.InvitePlayer and LockSmith.Utils:InvitePlayer(sender) then
-            print("|cff00ff00LockSmith:|r Invited " .. sender)
+        if LockSmithPro.Utils and LockSmithPro.Utils.InvitePlayer and LockSmithPro.Utils:InvitePlayer(sender) then
+            print("|cff00ff00LockSmithPro:|r Invited " .. sender)
         else
-            print("|cffff0000LockSmith:|r Unable to invite " .. sender)
+            print("|cffff0000LockSmithPro:|r Unable to invite " .. sender)
         end
         activeNotification:Hide()
     end)
@@ -276,7 +276,7 @@ function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requir
     end)
 
     activeNotification.ignoreSessionBtn:SetScript("OnClick", function(self)
-        LockSmith.ChatMonitor:AddToSessionIgnore(sender)
+        LockSmithPro.ChatMonitor:AddToSessionIgnore(sender)
         activeNotification:Hide()
     end)
 
@@ -291,29 +291,29 @@ function LockSmith.UI:ShowNotificationPopup(sender, boxData, channelName, requir
     activeNotification:Show()
 end
 
-function LockSmith.UI:ShowAdReadyPopup()
+function LockSmithPro.UI:ShowAdReadyPopup()
     if not activeAdNotification then
         activeAdNotification = CreateAdReadyPopup()
     end
 
-    local msg = LockSmithDB and LockSmithDB.adMessage or ""
+    local msg = LockSmithProDB and LockSmithProDB.adMessage or ""
     if msg == "" then
         msg = "No advertisement message set."
     end
     activeAdNotification.message:SetText("|cffffffffMessage:|r " .. msg)
 
     activeAdNotification.sendBtn:SetScript("OnClick", function()
-        LockSmith.Advertisement:SendAdvertisement()
+        LockSmithPro.Advertisement:SendAdvertisement()
     end)
 
     activeAdNotification.stopBtn:SetScript("OnClick", function()
-        LockSmith:Stop()
+        LockSmithPro:Stop()
         activeAdNotification:Hide()
     end)
 
     activeAdNotification.dismissBtn:SetScript("OnClick", function()
-        if LockSmith.Advertisement and LockSmith.Advertisement.ClearAdReady then
-            LockSmith.Advertisement:ClearAdReady()
+        if LockSmithPro.Advertisement and LockSmithPro.Advertisement.ClearAdReady then
+            LockSmithPro.Advertisement:ClearAdReady()
         else
             activeAdNotification:Hide()
         end
@@ -323,7 +323,7 @@ function LockSmith.UI:ShowAdReadyPopup()
     activeAdNotification:Show()
 end
 
-function LockSmith.UI:HideAdReadyPopup()
+function LockSmithPro.UI:HideAdReadyPopup()
     if activeAdNotification then
         activeAdNotification:Hide()
     end

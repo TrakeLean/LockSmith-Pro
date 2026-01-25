@@ -11,7 +11,15 @@
       "Bash(tree:*)",
       "Bash(find:*)",
       "Bash(git tag:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(powershell -Command \"\\(Get-Content ''Init.lua''\\) -replace ''LockSmith'', ''LockSmithPro'' -replace ''LockSmithProDB'', ''LockSmithProDB'' | Set-Content ''Init.lua''\")",
+      "Bash(powershell -Command:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File rename_script.ps1)",
+      "Bash(del rename_script.ps1)",
+      "Bash(ls:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File create-release.ps1 -Version \"1.0.0\" -EditionName \"Initial Release\")",
+      "Bash(mv:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .build/create-release.ps1 -Version \"1.0.0\" -EditionName \"Initial Release\")"
     ]
   }
 }

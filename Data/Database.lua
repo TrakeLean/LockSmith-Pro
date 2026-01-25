@@ -1,11 +1,11 @@
 -- Database.lua
 -- Contains all junkbox/lockbox definitions and skill requirements
 
-LockSmith = LockSmith or {}
-LockSmith.BoxDatabase = {}
+LockSmithPro = LockSmithPro or {}
+LockSmithPro.BoxDatabase = {}
 
 -- Junkbox and Lockbox database with skill requirements
-LockSmith.BoxDatabase = {
+LockSmithPro.BoxDatabase = {
     -- Junkboxes (pickpocketed items)
     ["battered"] = {
         name = "Battered Junkbox",
@@ -38,6 +38,20 @@ LockSmith.BoxDatabase = {
         itemID = 29569,
         type = "junkbox",
         expansion = "tbc"
+    },
+    ["reinforced junkbox"] = {
+        name = "Reinforced Junkbox",
+        skill = 350,
+        itemID = 43575,
+        type = "junkbox",
+        expansion = "wrath"
+    },
+    ["flame-scarred"] = {
+        name = "Flame-Scarred Junkbox",
+        skill = 400,
+        itemID = 63349,
+        type = "junkbox",
+        expansion = "cata"
     },
 
     -- World lockboxes
@@ -86,6 +100,76 @@ LockSmith.BoxDatabase = {
         type = "lockbox",
         expansion = "tbc"
     },
+    ["froststeel"] = {
+        name = "Froststeel Lockbox",
+        skill = 375,
+        itemID = 43622,
+        type = "lockbox",
+        expansion = "wrath"
+    },
+    ["titanium"] = {
+        name = "Titanium Lockbox",
+        skill = 400,
+        itemID = 43624,
+        type = "lockbox",
+        expansion = "wrath"
+    },
+    ["elementium"] = {
+        name = "Elementium Lockbox",
+        skill = 425,
+        itemID = 68729,
+        type = "lockbox",
+        expansion = "cata"
+    },
+    ["ghost iron"] = {
+        name = "Ghost Iron Lockbox",
+        skill = 450,
+        itemID = 88567,
+        type = "lockbox",
+        expansion = "mop"
+    },
+    ["true steel"] = {
+        name = "True Steel Lockbox",
+        skill = 500,
+        itemID = 116920,
+        type = "lockbox",
+        expansion = "wod"
+    },
+    ["leystone"] = {
+        name = "Leystone Lockbox",
+        skill = 550,
+        itemID = 121331,
+        type = "lockbox",
+        expansion = "legion"
+    },
+    ["barnacled"] = {
+        name = "Barnacled Lockbox",
+        skill = 600,
+        itemID = 169475,
+        type = "lockbox",
+        expansion = "bfa"
+    },
+    ["synvir"] = {
+        name = "Synvir Lockbox",
+        skill = 1,
+        itemID = 179311,
+        type = "lockbox",
+        expansion = "shadowlands"
+    },
+    ["oxxein"] = {
+        name = "Oxxein Lockbox",
+        skill = 1,
+        itemID = 180532,
+        type = "lockbox",
+        expansion = "shadowlands"
+    },
+    ["bismuth"] = {
+        name = "Bismuth Lockbox",
+        skill = 80,
+        itemID = 220376,
+        type = "lockbox",
+        expansion = "tww"
+    },
     ["ironbound"] = {
         name = "Ironbound Locked Chest",
         skill = 175,
@@ -123,11 +207,11 @@ LockSmith.BoxDatabase = {
 }
 
 -- Fast lookups by item ID
-LockSmith.BoxDatabaseById = {}
-for key, data in pairs(LockSmith.BoxDatabase) do
+LockSmithPro.BoxDatabaseById = {}
+for key, data in pairs(LockSmithPro.BoxDatabase) do
     data.key = key
     if data.itemID then
-        LockSmith.BoxDatabaseById[data.itemID] = key
+        LockSmithPro.BoxDatabaseById[data.itemID] = key
     end
 end
 
@@ -138,6 +222,8 @@ local function DetectWoWVersion()
     -- Interface version ranges
     if tocversion >= 100000 then
         return "retail" -- Retail (Dragonflight+)
+    elseif tocversion >= 40000 and tocversion < 100000 then
+        return "cata" -- Cataclysm
     elseif tocversion >= 30000 and tocversion < 40000 then
         return "wrath" -- Wrath of the Lich King
     elseif tocversion >= 20000 and tocversion < 30000 then
@@ -149,10 +235,10 @@ local function DetectWoWVersion()
     end
 end
 
-LockSmith.CurrentExpansion = DetectWoWVersion()
+LockSmithPro.CurrentExpansion = DetectWoWVersion()
 
 -- Get boxes relevant to current expansion
-function LockSmith:GetRelevantBoxes()
+function LockSmithPro:GetRelevantBoxes()
     local relevant = {}
     local currentExp = self.CurrentExpansion
 
@@ -160,11 +246,13 @@ function LockSmith:GetRelevantBoxes()
         -- Include if no expansion specified (generic) or matches current expansion or earlier
         if not data.expansion or data.expansion == "generic" then
             relevant[key] = data
+        elseif currentExp == "classic" and data.expansion == "classic" then
+            relevant[key] = data
         elseif currentExp == "tbc" and (data.expansion == "classic" or data.expansion == "tbc") then
             relevant[key] = data
         elseif currentExp == "wrath" and (data.expansion == "classic" or data.expansion == "tbc" or data.expansion == "wrath") then
             relevant[key] = data
-        elseif currentExp == "classic" and data.expansion == "classic" then
+        elseif currentExp == "cata" and (data.expansion == "classic" or data.expansion == "tbc" or data.expansion == "wrath" or data.expansion == "cata") then
             relevant[key] = data
         elseif currentExp == "retail" then
             relevant[key] = data -- Include all for retail
@@ -175,43 +263,17 @@ function LockSmith:GetRelevantBoxes()
 end
 
 -- Keywords that indicate a lockpicking request
-LockSmith.LockpickKeywords = {
-    "lockpick",
-    "lock pick",
-    "pick lock",
-    "lockbox",
-    "lockboxes",
-    "unlock",
-    "open box",
-    "open junk",
-    "open chest",
-    "pick my",
-    "need pick",
-    "need lockpick",
-    "rogue pick",
-    "rogue lockpick",
-    "can someone pick",
-    "anyone pick",
-    "need a rogue",
-    "need rogue",
-    "lf rogue",
-    "lf rouge", -- Common misspelling
-    "lfm rogue",
-    "lfm rouge", -- Common misspelling
-    "looking for rogue",
-    "looking for rouge", -- Common misspelling
-    "want rogue",
-    "need schurke", -- German for rogue
-    "suche schurke", -- German "looking for rogue"
-}
+-- Note: Lockpicking keywords are now configurable via the includeKeywords filter in settings
+-- This allows users to customize or disable keyword detection entirely
 
 -- Function to identify box type from message
-function LockSmith:IdentifyBoxType(message)
+-- ONLY identifies boxes from item links, not from text matching
+function LockSmithPro:IdentifyBoxType(message)
     if type(message) ~= "string" then
         return nil
     end
 
-    -- First, check for item links (works for all languages!)
+    -- ONLY check for item links (works for all languages!)
     -- Item links look like: |cffffffff|Hitem:16882:0:0:0:0:0:0:0|h[Battered Junkbox]|h|r
     local itemID = tonumber(string.match(message, "|Hitem:(%d+)"))
     if itemID and self.BoxDatabaseById and self.BoxDatabaseById[itemID] then
@@ -219,32 +281,12 @@ function LockSmith:IdentifyBoxType(message)
         return self.BoxDatabase[key]
     end
 
-    -- If no item link found, fall back to text matching
-    local lowerMsg = string.lower(message)
-
-    -- Use only boxes relevant to current expansion
-    local relevantBoxes = self:GetRelevantBoxes()
-
-    -- Check for specific box types (longest matches first to avoid false positives)
-    local sortedKeys = {}
-    for keyword, _ in pairs(relevantBoxes) do
-        table.insert(sortedKeys, keyword)
-    end
-
-    -- Sort by length (descending) to match longer phrases first
-    table.sort(sortedKeys, function(a, b) return string.len(a) > string.len(b) end)
-
-    for _, keyword in ipairs(sortedKeys) do
-        if string.find(lowerMsg, keyword, 1, true) then
-            return relevantBoxes[keyword]
-        end
-    end
-
+    -- No item link found - don't try to identify from text
     return nil
 end
 
 -- Resolve box data from an item link or name
-function LockSmith:GetBoxDataFromItemLink(itemLink, itemName)
+function LockSmithPro:GetBoxDataFromItemLink(itemLink, itemName)
     if type(itemLink) == "string" then
         local itemID = tonumber(string.match(itemLink, "item:(%d+)"))
         if itemID and self.BoxDatabaseById and self.BoxDatabaseById[itemID] then
@@ -260,18 +302,4 @@ function LockSmith:GetBoxDataFromItemLink(itemLink, itemName)
     return nil
 end
 
--- Function to check if message contains lockpicking keywords
-function LockSmith:HasLockpickKeyword(message)
-    if type(message) ~= "string" then
-        return false
-    end
-    local lowerMsg = string.lower(message)
-
-    for _, keyword in ipairs(self.LockpickKeywords) do
-        if string.find(lowerMsg, keyword, 1, true) then
-            return true
-        end
-    end
-
-    return false
-end
+-- Note: HasLockpickKeyword function removed - keyword filtering now handled by includeKeywords setting

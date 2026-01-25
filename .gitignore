@@ -18,3 +18,12 @@ Desktop.ini
 
 # Logs
 *.log
+
+# Release versions (keep versions folder but ignore zip files)
+versions/*.zip
+
+# Temporary build folders
+LockSmithPro/
+
+# Build/maintenance folder (tracked in repo)
+# .build/

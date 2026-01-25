@@ -1,14 +1,14 @@
 -- Skills.lua
 -- Lockpicking skill detection and management
 
-LockSmith = LockSmith or {}
-LockSmith.Skills = {}
+LockSmithPro = LockSmithPro or {}
+LockSmithPro.Skills = {}
 
 local currentLockpickSkill = 0
 local currentMaxSkill = 0
 
 -- Get current lockpicking skill
-function LockSmith.Skills:GetLockpickingSkill()
+function LockSmithPro.Skills:GetLockpickingSkill()
     local numSkills = GetNumSkillLines()
     for i = 1, numSkills do
         local skillName, isHeader, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank = GetSkillLineInfo(i)
@@ -24,16 +24,16 @@ function LockSmith.Skills:GetLockpickingSkill()
 end
 
 -- Get cached skill values (faster, doesn't query game)
-function LockSmith.Skills:GetCachedSkill()
+function LockSmithPro.Skills:GetCachedSkill()
     return currentLockpickSkill, currentMaxSkill
 end
 
 -- Check if player can pick a specific box
-function LockSmith.Skills:CanPickBox(requiredSkill)
+function LockSmithPro.Skills:CanPickBox(requiredSkill)
     return currentLockpickSkill >= requiredSkill
 end
 
 -- Update skill cache (call this when skill might have changed)
-function LockSmith.Skills:UpdateCache()
+function LockSmithPro.Skills:UpdateCache()
     return self:GetLockpickingSkill()
 end

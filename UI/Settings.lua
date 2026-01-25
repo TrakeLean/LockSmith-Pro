@@ -1,8 +1,8 @@
 -- Settings.lua
 -- Settings panel UI
 
-LockSmith = LockSmith or {}
-LockSmith.UI = LockSmith.UI or {}
+LockSmithPro = LockSmithPro or {}
+LockSmithPro.UI = LockSmithPro.UI or {}
 
 local settingsCategory = nil
 local settingsPanel = nil
@@ -12,7 +12,7 @@ local thanksBox = nil
 local boxStatLines = {}
 
 local function GetDefaultMessage(key)
-    local defaults = LockSmith.DefaultSettings
+    local defaults = LockSmithPro.DefaultSettings
     if defaults and type(defaults[key]) == "string" then
         return defaults[key]
     end
@@ -20,10 +20,10 @@ local function GetDefaultMessage(key)
 end
 
 local function RefreshMessageFields()
-    if not LockSmithDB then return end
+    if not LockSmithProDB then return end
 
     if adMsgBox then
-        local msg = LockSmithDB.adMessage
+        local msg = LockSmithProDB.adMessage
         if type(msg) ~= "string" or msg == "" then
             msg = GetDefaultMessage("adMessage")
         end
@@ -33,7 +33,7 @@ local function RefreshMessageFields()
     end
 
     if lowSkillBox then
-        local msg = LockSmithDB.lowSkillMessage
+        local msg = LockSmithProDB.lowSkillMessage
         if type(msg) ~= "string" or msg == "" then
             msg = GetDefaultMessage("lowSkillMessage")
         end
@@ -43,7 +43,7 @@ local function RefreshMessageFields()
     end
 
     if thanksBox then
-        local msg = LockSmithDB.thankYouMessage
+        local msg = LockSmithProDB.thankYouMessage
         if type(msg) ~= "string" or msg == "" then
             msg = GetDefaultMessage("thankYouMessage")
         end
@@ -54,31 +54,31 @@ local function RefreshMessageFields()
 end
 
 local function RefreshStats()
-    if not LockSmithDB or not LockSmithDB.stats then return end
+    if not LockSmithProDB or not LockSmithProDB.stats then return end
 
     -- Update main stat text elements
-    if _G["LockSmithTotalGoldText"] then
-        _G["LockSmithTotalGoldText"]:SetText("Total Gold Earned: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold))
+    if _G["LockSmithProTotalGoldText"] then
+        _G["LockSmithProTotalGoldText"]:SetText("Total Gold Earned: " .. LockSmithPro.Utils:FormatGold(LockSmithProDB.stats.totalGold))
     end
-    if _G["LockSmithTotalJobsText"] then
-        _G["LockSmithTotalJobsText"]:SetText("Total Jobs Completed: " .. LockSmithDB.stats.totalJobs)
+    if _G["LockSmithProTotalJobsText"] then
+        _G["LockSmithProTotalJobsText"]:SetText("Total Jobs Completed: " .. LockSmithProDB.stats.totalJobs)
     end
-    if _G["LockSmithTotalBoxesText"] then
-        _G["LockSmithTotalBoxesText"]:SetText("Total Boxes Opened: " .. (LockSmithDB.stats.totalBoxes or 0))
+    if _G["LockSmithProTotalBoxesText"] then
+        _G["LockSmithProTotalBoxesText"]:SetText("Total Boxes Opened: " .. (LockSmithProDB.stats.totalBoxes or 0))
     end
-    if _G["LockSmithAvgTipText"] then
-        local avg = LockSmith.Statistics:GetAverageTip()
-        _G["LockSmithAvgTipText"]:SetText("Average Tip: " .. LockSmith.Utils:FormatGold(avg))
+    if _G["LockSmithProAvgTipText"] then
+        local avg = LockSmithPro.Statistics:GetAverageTip()
+        _G["LockSmithProAvgTipText"]:SetText("Average Tip: " .. LockSmithPro.Utils:FormatGold(avg))
     end
-    if _G["LockSmithLastSessionText"] then
-        _G["LockSmithLastSessionText"]:SetText("Last Session: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold))
+    if _G["LockSmithProLastSessionText"] then
+        _G["LockSmithProLastSessionText"]:SetText("Last Session: " .. LockSmithPro.Utils:FormatGold(LockSmithProDB.stats.lastSessionGold))
     end
 
     -- Update per-box stats (using boxStatLines from closure)
-    local counts = LockSmithDB.stats.boxesOpened or {}
+    local counts = LockSmithProDB.stats.boxesOpened or {}
     if boxStatLines then
         for key, line in pairs(boxStatLines) do
-            local data = LockSmith.BoxDatabase[key]
+            local data = LockSmithPro.BoxDatabase[key]
             local skill = data and data.skill or 0
             local label = (skill > 0 and (skill .. " - ") or "") .. (data and data.name or key)
             line:SetText(label .. ": " .. (counts[key] or 0))
@@ -88,17 +88,17 @@ end
 
 local function CreateSettingsPanel()
     -- Main settings frame
-    local panel = CreateFrame("Frame", "LockSmithSettingsPanel", UIParent)
-    panel.name = "LockSmith"
+    local panel = CreateFrame("Frame", "LockSmithProSettingsPanel", UIParent)
+    panel.name = "LockSmithPro"
     settingsPanel = panel
     panel:SetScript("OnShow", RefreshMessageFields)
 
     -- Scroll frame for settings
-    local scrollFrame = CreateFrame("ScrollFrame", "LockSmithScrollFrame", panel, "UIPanelScrollFrameTemplate")
+    local scrollFrame = CreateFrame("ScrollFrame", "LockSmithProScrollFrame", panel, "UIPanelScrollFrameTemplate")
     scrollFrame:SetPoint("TOPLEFT", 10, -10)
     scrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
 
-    local scrollChild = CreateFrame("Frame", "LockSmithScrollChild", scrollFrame)
+    local scrollChild = CreateFrame("Frame", "LockSmithProScrollChild", scrollFrame)
     scrollChild:SetSize(580, 1200)
     scrollFrame:SetScrollChild(scrollChild)
 
@@ -107,7 +107,7 @@ local function CreateSettingsPanel()
     -- Title
     local title = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, yOffset)
-    title:SetText("LockSmith - Lockpicking Service Addon")
+    title:SetText("LockSmithPro - Lockpicking Service Addon")
     yOffset = yOffset - 30
 
     -- Version
@@ -126,19 +126,19 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Start/Stop button
-    local startStopBtn = CreateFrame("Button", "LockSmithStartStopBtn", scrollChild, "GameMenuButtonTemplate")
+    local startStopBtn = CreateFrame("Button", "LockSmithProStartStopBtn", scrollChild, "GameMenuButtonTemplate")
     startStopBtn:SetPoint("TOPLEFT", 16, yOffset)
     startStopBtn:SetSize(120, 25)
-    startStopBtn:SetText(LockSmith:IsRunning() and "Stop" or "Start")
+    startStopBtn:SetText(LockSmithPro:IsRunning() and "Stop" or "Start")
     startStopBtn:SetScript("OnClick", function(self)
-        LockSmith:Toggle()
-        self:SetText(LockSmith:IsRunning() and "Stop" or "Start")
+        LockSmithPro:Toggle()
+        self:SetText(LockSmithPro:IsRunning() and "Stop" or "Start")
 
         -- Update status text
-        local statusText = _G["LockSmithStatusText"]
+        local statusText = _G["LockSmithProStatusText"]
         if statusText then
-            if LockSmith:IsRunning() then
-                local skill, maxSkill = LockSmith.Skills:GetLockpickingSkill()
+            if LockSmithPro:IsRunning() then
+                local skill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
                 statusText:SetText("|cff00ff00Status: Running|r (Skill: " .. skill .. "/" .. maxSkill .. ")")
             else
                 statusText:SetText("|cffff0000Status: Stopped|r")
@@ -148,10 +148,10 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 35
 
     -- Status text
-    local statusText = scrollChild:CreateFontString("LockSmithStatusText", "ARTWORK", "GameFontNormal")
+    local statusText = scrollChild:CreateFontString("LockSmithProStatusText", "ARTWORK", "GameFontNormal")
     statusText:SetPoint("TOPLEFT", 16, yOffset)
-    if LockSmith:IsRunning() then
-        local skill, maxSkill = LockSmith.Skills:GetLockpickingSkill()
+    if LockSmithPro:IsRunning() then
+        local skill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
         statusText:SetText("|cff00ff00Status: Running|r (Skill: " .. skill .. "/" .. maxSkill .. ")")
     else
         statusText:SetText("|cffff0000Status: Stopped|r")
@@ -160,7 +160,7 @@ local function CreateSettingsPanel()
 
     local statusNote = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     statusNote:SetPoint("TOPLEFT", 16, yOffset)
-    statusNote:SetText("Note: You can use /locksmith start or /locksmith stop")
+    statusNote:SetText("Note: You can use /LockSmithPro start or /LockSmithPro stop")
     yOffset = yOffset - 30
 
     -- ================================
@@ -173,72 +173,72 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Trade channel checkbox
-    local tradeCheckbox = CreateFrame("CheckButton", "LockSmithTradeCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local tradeCheckbox = CreateFrame("CheckButton", "LockSmithProTradeCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     tradeCheckbox:SetPoint("TOPLEFT", 16, yOffset)
     _G[tradeCheckbox:GetName() .. "Text"]:SetText("Monitor Trade Channel")
-    tradeCheckbox:SetChecked(LockSmithDB.monitorTrade)
+    tradeCheckbox:SetChecked(LockSmithProDB.monitorTrade)
     tradeCheckbox:SetScript("OnClick", function(self)
-        LockSmithDB.monitorTrade = self:GetChecked()
+        LockSmithProDB.monitorTrade = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- General channel checkbox
-    local generalCheckbox = CreateFrame("CheckButton", "LockSmithGeneralCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local generalCheckbox = CreateFrame("CheckButton", "LockSmithProGeneralCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     generalCheckbox:SetPoint("TOPLEFT", 16, yOffset)
     _G[generalCheckbox:GetName() .. "Text"]:SetText("Monitor General Channel")
-    generalCheckbox:SetChecked(LockSmithDB.monitorGeneral)
+    generalCheckbox:SetChecked(LockSmithProDB.monitorGeneral)
     generalCheckbox:SetScript("OnClick", function(self)
-        LockSmithDB.monitorGeneral = self:GetChecked()
+        LockSmithProDB.monitorGeneral = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- LFG channel checkbox
-    local lfgCheckbox = CreateFrame("CheckButton", "LockSmithLFGCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local lfgCheckbox = CreateFrame("CheckButton", "LockSmithProLFGCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     lfgCheckbox:SetPoint("TOPLEFT", 16, yOffset)
     _G[lfgCheckbox:GetName() .. "Text"]:SetText("Monitor LookingForGroup Channel")
-    lfgCheckbox:SetChecked(LockSmithDB.monitorLFG)
+    lfgCheckbox:SetChecked(LockSmithProDB.monitorLFG)
     lfgCheckbox:SetScript("OnClick", function(self)
-        LockSmithDB.monitorLFG = self:GetChecked()
+        LockSmithProDB.monitorLFG = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- Whisper channel checkbox
-    local whisperCheckbox = CreateFrame("CheckButton", "LockSmithWhisperCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local whisperCheckbox = CreateFrame("CheckButton", "LockSmithProWhisperCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     whisperCheckbox:SetPoint("TOPLEFT", 16, yOffset)
     _G[whisperCheckbox:GetName() .. "Text"]:SetText("Monitor Whispers")
-    whisperCheckbox:SetChecked(LockSmithDB.monitorWhisper)
+    whisperCheckbox:SetChecked(LockSmithProDB.monitorWhisper)
     whisperCheckbox:SetScript("OnClick", function(self)
-        LockSmithDB.monitorWhisper = self:GetChecked()
+        LockSmithProDB.monitorWhisper = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- Sound effects checkbox
-    local soundCheckbox = CreateFrame("CheckButton", "LockSmithSoundCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local soundCheckbox = CreateFrame("CheckButton", "LockSmithProSoundCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     soundCheckbox:SetPoint("TOPLEFT", 16, yOffset)
     _G[soundCheckbox:GetName() .. "Text"]:SetText("Play Sound Effects")
-    soundCheckbox:SetChecked(LockSmithDB.playSoundEffects)
+    soundCheckbox:SetChecked(LockSmithProDB.playSoundEffects)
     soundCheckbox:SetScript("OnClick", function(self)
-        LockSmithDB.playSoundEffects = self:GetChecked()
+        LockSmithProDB.playSoundEffects = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- Auto-mark self with star checkbox
-    local autoMarkSelfCheckbox = CreateFrame("CheckButton", "LockSmithAutoMarkSelfCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local autoMarkSelfCheckbox = CreateFrame("CheckButton", "LockSmithProAutoMarkSelfCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     autoMarkSelfCheckbox:SetPoint("TOPLEFT", 16, yOffset)
     _G[autoMarkSelfCheckbox:GetName() .. "Text"]:SetText("Auto-mark Self with Star (Party Leader)")
-    autoMarkSelfCheckbox:SetChecked(LockSmithDB.autoMarkSelf)
+    autoMarkSelfCheckbox:SetChecked(LockSmithProDB.autoMarkSelf)
     autoMarkSelfCheckbox:SetScript("OnClick", function(self)
-        LockSmithDB.autoMarkSelf = self:GetChecked()
+        LockSmithProDB.autoMarkSelf = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- Auto-mark customers checkbox
-    local autoMarkCustomersCheckbox = CreateFrame("CheckButton", "LockSmithAutoMarkCustomersCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local autoMarkCustomersCheckbox = CreateFrame("CheckButton", "LockSmithProAutoMarkCustomersCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     autoMarkCustomersCheckbox:SetPoint("TOPLEFT", 16, yOffset)
     _G[autoMarkCustomersCheckbox:GetName() .. "Text"]:SetText("Auto-mark Customers with Raid Icons")
-    autoMarkCustomersCheckbox:SetChecked(LockSmithDB.autoMarkCustomers)
+    autoMarkCustomersCheckbox:SetChecked(LockSmithProDB.autoMarkCustomers)
     autoMarkCustomersCheckbox:SetScript("OnClick", function(self)
-        LockSmithDB.autoMarkCustomers = self:GetChecked()
+        LockSmithProDB.autoMarkCustomers = self:GetChecked()
     end)
     yOffset = yOffset - 35
 
@@ -258,13 +258,13 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Ad message editbox
-    adMsgBox = CreateFrame("EditBox", "LockSmithAdMsgBox", scrollChild, "InputBoxTemplate")
+    adMsgBox = CreateFrame("EditBox", "LockSmithProAdMsgBox", scrollChild, "InputBoxTemplate")
     adMsgBox:SetPoint("TOPLEFT", 16, yOffset)
     adMsgBox:SetSize(450, 30)
-    adMsgBox:SetText(LockSmithDB.adMessage)
+    adMsgBox:SetText(LockSmithProDB.adMessage)
     adMsgBox:SetAutoFocus(false)
     adMsgBox:SetScript("OnTextChanged", function(self)
-        LockSmithDB.adMessage = self:GetText()
+        LockSmithProDB.adMessage = self:GetText()
     end)
     adMsgBox:SetScript("OnEscapePressed", function(self)
         self:ClearFocus()
@@ -280,31 +280,31 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 25
 
     -- Set default ad message
-    local adDefaultBtn = CreateFrame("Button", "LockSmithAdDefaultBtn", scrollChild, "GameMenuButtonTemplate")
+    local adDefaultBtn = CreateFrame("Button", "LockSmithProAdDefaultBtn", scrollChild, "GameMenuButtonTemplate")
     adDefaultBtn:SetPoint("TOPLEFT", 16, yOffset)
     adDefaultBtn:SetSize(120, 25)
     adDefaultBtn:SetText("Set Default")
     adDefaultBtn:SetScript("OnClick", function()
-        if not LockSmithDB then return end
+        if not LockSmithProDB then return end
 
-        local defaultMsg = LockSmith.DefaultSettings and LockSmith.DefaultSettings.adMessage
+        local defaultMsg = LockSmithPro.DefaultSettings and LockSmithPro.DefaultSettings.adMessage
         if type(defaultMsg) ~= "string" or defaultMsg == "" then
             return
         end
 
-        LockSmithDB.adMessage = defaultMsg
+        LockSmithProDB.adMessage = defaultMsg
         adMsgBox:SetText(defaultMsg)
         adMsgBox:ClearFocus()
     end)
     yOffset = yOffset - 35
 
     -- Manual send button
-    local sendAdBtn = CreateFrame("Button", "LockSmithSendAdBtn", scrollChild, "GameMenuButtonTemplate")
+    local sendAdBtn = CreateFrame("Button", "LockSmithProSendAdBtn", scrollChild, "GameMenuButtonTemplate")
     sendAdBtn:SetPoint("TOPLEFT", 16, yOffset)
     sendAdBtn:SetSize(150, 25)
     sendAdBtn:SetText("Send Advertisement")
     sendAdBtn:SetScript("OnClick", function(self)
-        LockSmith.Advertisement:SendAdvertisement()
+        LockSmithPro.Advertisement:SendAdvertisement()
     end)
     yOffset = yOffset - 35
 
@@ -315,75 +315,75 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Trade ad channel checkbox
-    local adTradeCheck = CreateFrame("CheckButton", "LockSmithAdTradeCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local adTradeCheck = CreateFrame("CheckButton", "LockSmithProAdTradeCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     adTradeCheck:SetPoint("TOPLEFT", 16, yOffset)
     _G[adTradeCheck:GetName() .. "Text"]:SetText("Trade Channel")
-    adTradeCheck:SetChecked(LockSmithDB.adChannels.trade)
+    adTradeCheck:SetChecked(LockSmithProDB.adChannels.trade)
     adTradeCheck:SetScript("OnClick", function(self)
-        LockSmithDB.adChannels.trade = self:GetChecked()
+        LockSmithProDB.adChannels.trade = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- General ad channel checkbox
-    local adGeneralCheck = CreateFrame("CheckButton", "LockSmithAdGeneralCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local adGeneralCheck = CreateFrame("CheckButton", "LockSmithProAdGeneralCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     adGeneralCheck:SetPoint("TOPLEFT", 16, yOffset)
     _G[adGeneralCheck:GetName() .. "Text"]:SetText("General Channel")
-    adGeneralCheck:SetChecked(LockSmithDB.adChannels.general)
+    adGeneralCheck:SetChecked(LockSmithProDB.adChannels.general)
     adGeneralCheck:SetScript("OnClick", function(self)
-        LockSmithDB.adChannels.general = self:GetChecked()
+        LockSmithProDB.adChannels.general = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- LFG ad channel checkbox
-    local adLFGCheck = CreateFrame("CheckButton", "LockSmithAdLFGCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local adLFGCheck = CreateFrame("CheckButton", "LockSmithProAdLFGCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     adLFGCheck:SetPoint("TOPLEFT", 16, yOffset)
     _G[adLFGCheck:GetName() .. "Text"]:SetText("LookingForGroup Channel")
-    adLFGCheck:SetChecked(LockSmithDB.adChannels.lfg)
+    adLFGCheck:SetChecked(LockSmithProDB.adChannels.lfg)
     adLFGCheck:SetScript("OnClick", function(self)
-        LockSmithDB.adChannels.lfg = self:GetChecked()
+        LockSmithProDB.adChannels.lfg = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- Yell ad channel checkbox
-    local adYellCheck = CreateFrame("CheckButton", "LockSmithAdYellCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local adYellCheck = CreateFrame("CheckButton", "LockSmithProAdYellCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     adYellCheck:SetPoint("TOPLEFT", 16, yOffset)
     _G[adYellCheck:GetName() .. "Text"]:SetText("Yell")
-    adYellCheck:SetChecked(LockSmithDB.adChannels.yell)
+    adYellCheck:SetChecked(LockSmithProDB.adChannels.yell)
     adYellCheck:SetScript("OnClick", function(self)
-        LockSmithDB.adChannels.yell = self:GetChecked()
+        LockSmithProDB.adChannels.yell = self:GetChecked()
     end)
     yOffset = yOffset - 35
 
     -- Timer enabled checkbox
-    local timerCheckbox = CreateFrame("CheckButton", "LockSmithTimerCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local timerCheckbox = CreateFrame("CheckButton", "LockSmithProTimerCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     timerCheckbox:SetPoint("TOPLEFT", 16, yOffset)
     _G[timerCheckbox:GetName() .. "Text"]:SetText("Enable Auto-Advertisement Timer")
-    timerCheckbox:SetChecked(LockSmithDB.adTimerEnabled)
+    timerCheckbox:SetChecked(LockSmithProDB.adTimerEnabled)
     timerCheckbox:SetScript("OnClick", function(self)
-        LockSmithDB.adTimerEnabled = self:GetChecked()
-        if self:GetChecked() and LockSmith:IsRunning() then
-            LockSmith.Advertisement:StartAdTimer()
+        LockSmithProDB.adTimerEnabled = self:GetChecked()
+        if self:GetChecked() and LockSmithPro:IsRunning() then
+            LockSmithPro.Advertisement:StartAdTimer()
         else
-            LockSmith.Advertisement:StopAdTimer()
+            LockSmithPro.Advertisement:StopAdTimer()
         end
     end)
     yOffset = yOffset - 30
 
     -- Timer interval slider
-    local timerSlider = CreateFrame("Slider", "LockSmithTimerSlider", scrollChild, "OptionsSliderTemplate")
+    local timerSlider = CreateFrame("Slider", "LockSmithProTimerSlider", scrollChild, "OptionsSliderTemplate")
     timerSlider:SetPoint("TOPLEFT", 16, yOffset)
     timerSlider:SetMinMaxValues(30, 600)
-    timerSlider:SetValue(LockSmithDB.adTimerInterval or 60)
+    timerSlider:SetValue(LockSmithProDB.adTimerInterval or 60)
     timerSlider:SetValueStep(30)
     timerSlider:SetObeyStepOnDrag(true)
     _G[timerSlider:GetName() .. "Low"]:SetText("30s")
     _G[timerSlider:GetName() .. "High"]:SetText("10m")
-    _G[timerSlider:GetName() .. "Text"]:SetText("Timer Interval: " .. (LockSmithDB.adTimerInterval or 60) .. "s")
+    _G[timerSlider:GetName() .. "Text"]:SetText("Timer Interval: " .. (LockSmithProDB.adTimerInterval or 60) .. "s")
     timerSlider:SetScript("OnValueChanged", function(self, value)
-        LockSmithDB.adTimerInterval = value
+        LockSmithProDB.adTimerInterval = value
         _G[self:GetName() .. "Text"]:SetText("Timer Interval: " .. value .. "s")
-        if LockSmithDB.adTimerEnabled and LockSmith:IsRunning() then
-            LockSmith.Advertisement:StartAdTimer()
+        if LockSmithProDB.adTimerEnabled and LockSmithPro:IsRunning() then
+            LockSmithPro.Advertisement:StartAdTimer()
         end
     end)
     yOffset = yOffset - 50
@@ -398,32 +398,32 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Auto-invite on whisper
-    local autoInviteCheck = CreateFrame("CheckButton", "LockSmithAutoInviteCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local autoInviteCheck = CreateFrame("CheckButton", "LockSmithProAutoInviteCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     autoInviteCheck:SetPoint("TOPLEFT", 16, yOffset)
     _G[autoInviteCheck:GetName() .. "Text"]:SetText("Auto-invite whisper senders")
-    autoInviteCheck:SetChecked(LockSmithDB.autoInviteWhisper)
+    autoInviteCheck:SetChecked(LockSmithProDB.autoInviteWhisper)
     autoInviteCheck:SetScript("OnClick", function(self)
-        LockSmithDB.autoInviteWhisper = self:GetChecked()
+        LockSmithProDB.autoInviteWhisper = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- Popup on any whisper
-    local popupWhisperCheck = CreateFrame("CheckButton", "LockSmithPopupWhisperCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local popupWhisperCheck = CreateFrame("CheckButton", "LockSmithProPopupWhisperCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     popupWhisperCheck:SetPoint("TOPLEFT", 16, yOffset)
     _G[popupWhisperCheck:GetName() .. "Text"]:SetText("Popup on any whisper (even without keywords)")
-    popupWhisperCheck:SetChecked(LockSmithDB.popupOnAnyWhisper)
+    popupWhisperCheck:SetChecked(LockSmithProDB.popupOnAnyWhisper)
     popupWhisperCheck:SetScript("OnClick", function(self)
-        LockSmithDB.popupOnAnyWhisper = self:GetChecked()
+        LockSmithProDB.popupOnAnyWhisper = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
     -- Low skill whisper checkbox
-    local lowSkillCheck = CreateFrame("CheckButton", "LockSmithLowSkillCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local lowSkillCheck = CreateFrame("CheckButton", "LockSmithProLowSkillCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     lowSkillCheck:SetPoint("TOPLEFT", 16, yOffset)
     _G[lowSkillCheck:GetName() .. "Text"]:SetText("Whisper when skill is too low")
-    lowSkillCheck:SetChecked(LockSmithDB.lowSkillWhisper)
+    lowSkillCheck:SetChecked(LockSmithProDB.lowSkillWhisper)
     lowSkillCheck:SetScript("OnClick", function(self)
-        LockSmithDB.lowSkillWhisper = self:GetChecked()
+        LockSmithProDB.lowSkillWhisper = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
@@ -434,13 +434,13 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Low skill message editbox
-    lowSkillBox = CreateFrame("EditBox", "LockSmithLowSkillBox", scrollChild, "InputBoxTemplate")
+    lowSkillBox = CreateFrame("EditBox", "LockSmithProLowSkillBox", scrollChild, "InputBoxTemplate")
     lowSkillBox:SetPoint("TOPLEFT", 16, yOffset)
     lowSkillBox:SetSize(450, 30)
-    lowSkillBox:SetText(LockSmithDB.lowSkillMessage)
+    lowSkillBox:SetText(LockSmithProDB.lowSkillMessage)
     lowSkillBox:SetAutoFocus(false)
     lowSkillBox:SetScript("OnTextChanged", function(self)
-        LockSmithDB.lowSkillMessage = self:GetText()
+        LockSmithProDB.lowSkillMessage = self:GetText()
     end)
     lowSkillBox:SetScript("OnEscapePressed", function(self)
         self:ClearFocus()
@@ -448,31 +448,31 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 35
 
     -- Set default low skill message
-    local lowSkillDefaultBtn = CreateFrame("Button", "LockSmithLowSkillDefaultBtn", scrollChild, "GameMenuButtonTemplate")
+    local lowSkillDefaultBtn = CreateFrame("Button", "LockSmithProLowSkillDefaultBtn", scrollChild, "GameMenuButtonTemplate")
     lowSkillDefaultBtn:SetPoint("TOPLEFT", 16, yOffset)
     lowSkillDefaultBtn:SetSize(120, 25)
     lowSkillDefaultBtn:SetText("Set Default")
     lowSkillDefaultBtn:SetScript("OnClick", function()
-        if not LockSmithDB then return end
+        if not LockSmithProDB then return end
 
-        local defaultMsg = LockSmith.DefaultSettings and LockSmith.DefaultSettings.lowSkillMessage
+        local defaultMsg = LockSmithPro.DefaultSettings and LockSmithPro.DefaultSettings.lowSkillMessage
         if type(defaultMsg) ~= "string" or defaultMsg == "" then
             return
         end
 
-        LockSmithDB.lowSkillMessage = defaultMsg
+        LockSmithProDB.lowSkillMessage = defaultMsg
         lowSkillBox:SetText(defaultMsg)
         lowSkillBox:ClearFocus()
     end)
     yOffset = yOffset - 35
 
     -- Thank-you whisper checkbox
-    local thankYouCheck = CreateFrame("CheckButton", "LockSmithThankYouCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    local thankYouCheck = CreateFrame("CheckButton", "LockSmithProThankYouCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     thankYouCheck:SetPoint("TOPLEFT", 16, yOffset)
     _G[thankYouCheck:GetName() .. "Text"]:SetText("Whisper after receiving a tip")
-    thankYouCheck:SetChecked(LockSmithDB.thankYouWhisper)
+    thankYouCheck:SetChecked(LockSmithProDB.thankYouWhisper)
     thankYouCheck:SetScript("OnClick", function(self)
-        LockSmithDB.thankYouWhisper = self:GetChecked()
+        LockSmithProDB.thankYouWhisper = self:GetChecked()
     end)
     yOffset = yOffset - 25
 
@@ -483,13 +483,13 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Thank-you message editbox
-    thanksBox = CreateFrame("EditBox", "LockSmithThankYouBox", scrollChild, "InputBoxTemplate")
+    thanksBox = CreateFrame("EditBox", "LockSmithProThankYouBox", scrollChild, "InputBoxTemplate")
     thanksBox:SetPoint("TOPLEFT", 16, yOffset)
     thanksBox:SetSize(450, 30)
-    thanksBox:SetText(LockSmithDB.thankYouMessage)
+    thanksBox:SetText(LockSmithProDB.thankYouMessage)
     thanksBox:SetAutoFocus(false)
     thanksBox:SetScript("OnTextChanged", function(self)
-        LockSmithDB.thankYouMessage = self:GetText()
+        LockSmithProDB.thankYouMessage = self:GetText()
     end)
     thanksBox:SetScript("OnEscapePressed", function(self)
         self:ClearFocus()
@@ -505,19 +505,19 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 25
 
     -- Set default thank-you message
-    local thankYouDefaultBtn = CreateFrame("Button", "LockSmithThankYouDefaultBtn", scrollChild, "GameMenuButtonTemplate")
+    local thankYouDefaultBtn = CreateFrame("Button", "LockSmithProThankYouDefaultBtn", scrollChild, "GameMenuButtonTemplate")
     thankYouDefaultBtn:SetPoint("TOPLEFT", 16, yOffset)
     thankYouDefaultBtn:SetSize(120, 25)
     thankYouDefaultBtn:SetText("Set Default")
     thankYouDefaultBtn:SetScript("OnClick", function()
-        if not LockSmithDB then return end
+        if not LockSmithProDB then return end
 
-        local defaultMsg = LockSmith.DefaultSettings and LockSmith.DefaultSettings.thankYouMessage
+        local defaultMsg = LockSmithPro.DefaultSettings and LockSmithPro.DefaultSettings.thankYouMessage
         if type(defaultMsg) ~= "string" or defaultMsg == "" then
             return
         end
 
-        LockSmithDB.thankYouMessage = defaultMsg
+        LockSmithProDB.thankYouMessage = defaultMsg
         thanksBox:SetText(defaultMsg)
         thanksBox:ClearFocus()
     end)
@@ -533,34 +533,34 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Total gold
-    local totalGoldText = scrollChild:CreateFontString("LockSmithTotalGoldText", "ARTWORK", "GameFontNormal")
+    local totalGoldText = scrollChild:CreateFontString("LockSmithProTotalGoldText", "ARTWORK", "GameFontNormal")
     totalGoldText:SetPoint("TOPLEFT", 16, yOffset)
-    totalGoldText:SetText("Total Gold Earned: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold))
+    totalGoldText:SetText("Total Gold Earned: " .. LockSmithPro.Utils:FormatGold(LockSmithProDB.stats.totalGold))
     yOffset = yOffset - 20
 
     -- Total jobs
-    local totalJobsText = scrollChild:CreateFontString("LockSmithTotalJobsText", "ARTWORK", "GameFontNormal")
+    local totalJobsText = scrollChild:CreateFontString("LockSmithProTotalJobsText", "ARTWORK", "GameFontNormal")
     totalJobsText:SetPoint("TOPLEFT", 16, yOffset)
-    totalJobsText:SetText("Total Jobs Completed: " .. LockSmithDB.stats.totalJobs)
+    totalJobsText:SetText("Total Jobs Completed: " .. LockSmithProDB.stats.totalJobs)
     yOffset = yOffset - 20
 
     -- Total boxes opened
-    local totalBoxesText = scrollChild:CreateFontString("LockSmithTotalBoxesText", "ARTWORK", "GameFontNormal")
+    local totalBoxesText = scrollChild:CreateFontString("LockSmithProTotalBoxesText", "ARTWORK", "GameFontNormal")
     totalBoxesText:SetPoint("TOPLEFT", 16, yOffset)
-    totalBoxesText:SetText("Total Boxes Opened: " .. (LockSmithDB.stats.totalBoxes or 0))
+    totalBoxesText:SetText("Total Boxes Opened: " .. (LockSmithProDB.stats.totalBoxes or 0))
     yOffset = yOffset - 20
 
     -- Average tip
-    local avgTip = LockSmith.Statistics:GetAverageTip()
-    local avgTipText = scrollChild:CreateFontString("LockSmithAvgTipText", "ARTWORK", "GameFontNormal")
+    local avgTip = LockSmithPro.Statistics:GetAverageTip()
+    local avgTipText = scrollChild:CreateFontString("LockSmithProAvgTipText", "ARTWORK", "GameFontNormal")
     avgTipText:SetPoint("TOPLEFT", 16, yOffset)
-    avgTipText:SetText("Average Tip: " .. LockSmith.Utils:FormatGold(avgTip))
+    avgTipText:SetText("Average Tip: " .. LockSmithPro.Utils:FormatGold(avgTip))
     yOffset = yOffset - 20
 
     -- Last session gold
-    local lastSessionText = scrollChild:CreateFontString("LockSmithLastSessionText", "ARTWORK", "GameFontNormal")
+    local lastSessionText = scrollChild:CreateFontString("LockSmithProLastSessionText", "ARTWORK", "GameFontNormal")
     lastSessionText:SetPoint("TOPLEFT", 16, yOffset)
-    lastSessionText:SetText("Last Session: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.lastSessionGold))
+    lastSessionText:SetText("Last Session: " .. LockSmithPro.Utils:FormatGold(LockSmithProDB.stats.lastSessionGold))
     yOffset = yOffset - 30
 
     -- Per-box stats
@@ -571,12 +571,12 @@ local function CreateSettingsPanel()
 
     boxStatLines = {}  -- Reset the module-level table
     local boxKeys = {}
-    for key, data in pairs(LockSmith.BoxDatabase) do
+    for key, data in pairs(LockSmithPro.BoxDatabase) do
         table.insert(boxKeys, key)
     end
     table.sort(boxKeys, function(a, b)
-        local dataA = LockSmith.BoxDatabase[a]
-        local dataB = LockSmith.BoxDatabase[b]
+        local dataA = LockSmithPro.BoxDatabase[a]
+        local dataB = LockSmithPro.BoxDatabase[b]
         local skillA = dataA and dataA.skill or 0
         local skillB = dataB and dataB.skill or 0
         if skillA ~= skillB then
@@ -588,10 +588,10 @@ local function CreateSettingsPanel()
     end)
 
     for _, key in ipairs(boxKeys) do
-        local data = LockSmith.BoxDatabase[key]
+        local data = LockSmithPro.BoxDatabase[key]
         local line = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         line:SetPoint("TOPLEFT", 24, yOffset)
-        local count = (LockSmithDB.stats.boxesOpened and LockSmithDB.stats.boxesOpened[key]) or 0
+        local count = (LockSmithProDB.stats.boxesOpened and LockSmithProDB.stats.boxesOpened[key]) or 0
         local skill = data and data.skill or 0
         local label = (skill > 0 and (skill .. " - ") or "") .. (data and data.name or key)
         line:SetText(label .. ": " .. count)
@@ -601,26 +601,26 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 12
 
     -- Reset stats button
-    local resetStatsBtn = CreateFrame("Button", "LockSmithResetStatsBtn", scrollChild, "GameMenuButtonTemplate")
+    local resetStatsBtn = CreateFrame("Button", "LockSmithProResetStatsBtn", scrollChild, "GameMenuButtonTemplate")
     resetStatsBtn:SetPoint("TOPLEFT", 16, yOffset)
     resetStatsBtn:SetSize(120, 25)
     resetStatsBtn:SetText("Reset Stats")
     resetStatsBtn:SetScript("OnClick", function(self)
-        LockSmith.Statistics:ResetStats()
+        LockSmithPro.Statistics:ResetStats()
 
-        _G["LockSmithTotalGoldText"]:SetText("Total Gold Earned: 0c")
-        _G["LockSmithTotalJobsText"]:SetText("Total Jobs Completed: 0")
-        _G["LockSmithTotalBoxesText"]:SetText("Total Boxes Opened: 0")
-        _G["LockSmithAvgTipText"]:SetText("Average Tip: 0c")
-        _G["LockSmithLastSessionText"]:SetText("Last Session: 0c")
+        _G["LockSmithProTotalGoldText"]:SetText("Total Gold Earned: 0c")
+        _G["LockSmithProTotalJobsText"]:SetText("Total Jobs Completed: 0")
+        _G["LockSmithProTotalBoxesText"]:SetText("Total Boxes Opened: 0")
+        _G["LockSmithProAvgTipText"]:SetText("Average Tip: 0c")
+        _G["LockSmithProLastSessionText"]:SetText("Last Session: 0c")
 
         for key, line in pairs(boxStatLines) do
-            local data = LockSmith.BoxDatabase[key]
+            local data = LockSmithPro.BoxDatabase[key]
             local name = data and data.name or key
             line:SetText(name .. ": 0")
         end
 
-        print("|cff00ff00LockSmith:|r Statistics reset!")
+        print("|cff00ff00LockSmithPro:|r Statistics reset!")
     end)
 
     -- Register with interface options (compat for old/new APIs)
@@ -639,9 +639,9 @@ local function CreateSettingsPanel()
 end
 
 -- Open settings GUI
-function LockSmith.UI:OpenSettingsGUI()
+function LockSmithPro.UI:OpenSettingsGUI()
     -- Create settings panel if it doesn't exist
-    if not _G["LockSmithSettingsPanel"] then
+    if not _G["LockSmithProSettingsPanel"] then
         CreateSettingsPanel()
     end
 

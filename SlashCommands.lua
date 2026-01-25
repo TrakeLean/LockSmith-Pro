@@ -1,57 +1,57 @@
 -- SlashCommands.lua
 -- Slash command handlers
 
-LockSmith = LockSmith or {}
+LockSmithPro = LockSmithPro or {}
 
 -- Register slash commands
-SLASH_LOCKSMITH1 = "/locksmith"
-SLASH_LOCKSMITH2 = "/ls"
+SLASH_LockSmithPro1 = "/LockSmithPro"
+SLASH_LockSmithPro2 = "/ls"
 
-SlashCmdList["LOCKSMITH"] = function(msg)
+SlashCmdList["LockSmithPro"] = function(msg)
     local cmd = string.lower(msg)
 
     if cmd == "start" then
-        LockSmith:Start()
+        LockSmithPro:Start()
 
     elseif cmd == "stop" then
-        LockSmith:Stop()
+        LockSmithPro:Stop()
 
     elseif cmd == "toggle" then
-        LockSmith:Toggle()
+        LockSmithPro:Toggle()
 
     elseif cmd == "ad" or cmd == "advertise" then
-        LockSmith.Advertisement:SendAdvertisement()
+        LockSmithPro.Advertisement:SendAdvertisement()
 
     elseif cmd == "skill" then
-        local skill, maxSkill = LockSmith.Skills:GetLockpickingSkill()
-        print("|cff00ff00LockSmith:|r Lockpicking skill: " .. skill .. "/" .. maxSkill)
+        local skill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
+        print("|cff00ff00LockSmithPro:|r Lockpicking skill: " .. skill .. "/" .. maxSkill)
 
     elseif cmd == "stats" then
-        print("|cff00ff00LockSmith Statistics:|r")
-        print("Total Gold: " .. LockSmith.Utils:FormatGold(LockSmithDB.stats.totalGold))
-        print("Total Jobs: " .. LockSmithDB.stats.totalJobs)
-        print("Session Gold: " .. LockSmith.Utils:FormatGold(LockSmith.Statistics:GetSessionGold()))
+        print("|cff00ff00LockSmithPro Statistics:|r")
+        print("Total Earned: " .. LockSmithPro.Utils:FormatGold(LockSmithProDB.stats.totalGold))
+        print("Total Jobs: " .. LockSmithProDB.stats.totalJobs)
+        print("Session Earned: " .. LockSmithPro.Utils:FormatGold(LockSmithPro.Statistics:GetSessionGold()))
 
-        local avgTip = LockSmith.Statistics:GetAverageTip()
+        local avgTip = LockSmithPro.Statistics:GetAverageTip()
         if avgTip > 0 then
-            print("Average Tip: " .. LockSmith.Utils:FormatGold(avgTip))
+            print("Average Tip: " .. LockSmithPro.Utils:FormatGold(avgTip))
         end
 
     elseif cmd == "minimap" then
-        LockSmith.Minimap:ToggleButton()
-        if LockSmithDB.minimapButtonHidden then
-            print("|cff00ff00LockSmith:|r Minimap button hidden")
+        LockSmithPro.Minimap:ToggleButton()
+        if LockSmithProDB.minimapButtonHidden then
+            print("|cff00ff00LockSmithPro:|r Minimap button hidden")
         else
-            print("|cff00ff00LockSmith:|r Minimap button shown")
+            print("|cff00ff00LockSmithPro:|r Minimap button shown")
         end
 
     else
         -- Open dashboard
-        if LockSmith.Dashboard then
-            LockSmith.Dashboard:Show()
+        if LockSmithPro.Dashboard then
+            LockSmithPro.Dashboard:Show()
         else
             -- Fallback to old settings GUI if dashboard not loaded
-            LockSmith.UI:OpenSettingsGUI()
+            LockSmithPro.UI:OpenSettingsGUI()
         end
     end
 end
