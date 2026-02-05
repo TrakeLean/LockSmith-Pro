@@ -13,9 +13,15 @@ local pendingTradeGold = 0
 local pendingTradeBoxes = 0
 local pendingTradeBoxCounts = nil
 local tradeCompleted = false
+local tradeWindowOpen = false  -- Track if trade window is currently open
 local lastJobTimeByPartner = {}
 local JOB_WINDOW_SECONDS = 600
 local pickedLocksThisTrade = 0  -- Track Pick Lock casts during current trade
+local pickedLockBoxCountsThisTrade = {}  -- Per-box counts for slot 7 Pick Lock casts
+local pickedLocksUnattributedThisTrade = 0  -- Pick locks we couldn't map to a known box key
+local currentSlot7BoxKey = nil
+local tradeStateToken = 0
+local ERR_TRADE_COMPLETE = _G.ERR_TRADE_COMPLETE
 
 -- Pick Lock spell IDs across different WoW versions
 -- We'll check against all of them since spell IDs can vary
@@ -32,6 +38,56 @@ local function IsPickLockSpell(spellID)
         end
     end
     return false
+end
+
+local function AddBoxCount(counts, key, amount)
+    if type(counts) ~= "table" or type(key) ~= "string" or key == "" then
+        return
+    end
+
+    local num = tonumber(amount) or 0
+    if num <= 0 then
+        return
+    end
+
+    counts[key] = (counts[key] or 0) + num
+end
+
+local function SumBoxCounts(counts)
+    local total = 0
+    if type(counts) ~= "table" then
+        return 0
+    end
+
+    for _, count in pairs(counts) do
+        total = total + (tonumber(count) or 0)
+    end
+
+    return total
+end
+
+local function ResetTradeTrackingState()
+    pendingTradePartner = nil
+    pendingTradeGold = 0
+    pendingTradeBoxes = 0
+    pendingTradeBoxCounts = nil
+    tradeCompleted = false
+    tradeWindowOpen = false
+    pickedLocksThisTrade = 0
+    pickedLockBoxCountsThisTrade = {}
+    pickedLocksUnattributedThisTrade = 0
+    currentSlot7BoxKey = nil
+end
+
+local function GetTradeTargetBoxData(slot)
+    local itemLink = GetTradeTargetItemLink(slot)
+    if not itemLink then
+        return nil, nil
+    end
+
+    local itemName = GetTradeTargetItemInfo(slot)
+    local boxData = LockSmithPro.GetBoxDataFromItemLink and LockSmithPro:GetBoxDataFromItemLink(itemLink, itemName)
+    return boxData, itemLink
 end
 
 local function NormalizePartnerName(name)
@@ -134,14 +190,17 @@ function LockSmithPro.Statistics:GetSessionAverage()
 end
 
 -- Track gold received
-function LockSmithPro.Statistics:TrackGoldReceived(amount, source, boxCounts)
+function LockSmithPro.Statistics:TrackGoldReceived(amount, source, boxCounts, extraBoxes)
     local goldReceived = amount or 0
     local totalBoxes = 0
+    extraBoxes = tonumber(extraBoxes) or 0
 
-    if boxCounts then
-        for _, count in pairs(boxCounts) do
-            totalBoxes = totalBoxes + count
-        end
+    totalBoxes = totalBoxes + extraBoxes
+
+    if type(boxCounts) == "table" then
+        totalBoxes = totalBoxes + SumBoxCounts(boxCounts)
+    else
+        boxCounts = nil
     end
 
     if goldReceived <= 0 and totalBoxes <= 0 then
@@ -164,8 +223,10 @@ function LockSmithPro.Statistics:TrackGoldReceived(amount, source, boxCounts)
         sessionBoxes = sessionBoxes + totalBoxes
         EnsureBoxStats()
         LockSmithProDB.stats.totalBoxes = LockSmithProDB.stats.totalBoxes + totalBoxes
-        for key, count in pairs(boxCounts) do
-            LockSmithProDB.stats.boxesOpened[key] = (LockSmithProDB.stats.boxesOpened[key] or 0) + count
+        if boxCounts then
+            for key, count in pairs(boxCounts) do
+                LockSmithProDB.stats.boxesOpened[key] = (LockSmithProDB.stats.boxesOpened[key] or 0) + count
+            end
         end
         print("|cff00ff00LockSmithPro:|r Session boxes: " .. sessionBoxes)
     end
@@ -218,8 +279,6 @@ end
 -- instead of TRADE_ACCEPT_UPDATE for final trade processing.
 -- This fires AFTER all spell casts and trade actions have completed on the server.
 
-local tradeWindowOpen = false  -- Track if trade window is currently open
-
 local tradeFrame = CreateFrame("Frame")
 tradeFrame:RegisterEvent("TRADE_SHOW")
 tradeFrame:RegisterEvent("TRADE_ACCEPT_UPDATE")
@@ -232,13 +291,19 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "TRADE_SHOW" then
         -- Reset trade data when trade window opens
         -- Try multiple methods to get partner name (handles no target case)
-        pendingTradePartner = UnitName("NPC") or UnitName("target") or TradeFrameRecipientNameText:GetText() or "Unknown"
+        tradeStateToken = tradeStateToken + 1
+
+        local partnerFromFrame = TradeFrameRecipientNameText and TradeFrameRecipientNameText:GetText() or nil
+        pendingTradePartner = UnitName("NPC") or UnitName("target") or partnerFromFrame or "Unknown"
         pendingTradeGold = 0
         pendingTradeBoxes = 0
         pendingTradeBoxCounts = nil
         tradeCompleted = false
         tradeWindowOpen = true
         pickedLocksThisTrade = 0  -- Reset lock pick counter
+        pickedLockBoxCountsThisTrade = {}
+        pickedLocksUnattributedThisTrade = 0
+        currentSlot7BoxKey = nil
         print("|cff00ff00LockSmithPro:|r Trade opened with: " .. (pendingTradePartner or "Unknown"))
 
     elseif event == "TRADE_TARGET_ITEM_CHANGED" then
@@ -246,7 +311,9 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
         local slotIndex = ...
         if slotIndex == 7 then
             -- Customer put/removed item in "Will Not Be Traded" slot
-            local itemLink = GetTradeTargetItemLink(7)
+            local boxData, itemLink = GetTradeTargetBoxData(7)
+            currentSlot7BoxKey = boxData and boxData.key or nil
+
             if itemLink then
                 print("|cff00ff00LockSmithPro:|r Item in 'Will Not Be Traded' slot: " .. itemLink)
             end
@@ -259,7 +326,25 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
         local unitTarget, castGUID, spellID = ...
 
         if unitTarget == "player" and IsPickLockSpell(spellID) then
+            local boxKey = currentSlot7BoxKey
+            if not boxKey then
+                local slot7BoxData, slot7ItemLink = GetTradeTargetBoxData(7)
+                if not slot7ItemLink then
+                    return
+                end
+
+                boxKey = slot7BoxData and slot7BoxData.key or nil
+                currentSlot7BoxKey = boxKey
+            end
+
             pickedLocksThisTrade = pickedLocksThisTrade + 1
+
+            if boxKey then
+                AddBoxCount(pickedLockBoxCountsThisTrade, boxKey, 1)
+            else
+                pickedLocksUnattributedThisTrade = pickedLocksUnattributedThisTrade + 1
+            end
+
             print("|cff00ff00LockSmithPro:|r Pick Lock cast #" .. pickedLocksThisTrade .. " (spell ID: " .. spellID .. ")")
         end
 
@@ -284,21 +369,39 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
 
             -- Use the data we captured during TRADE_ACCEPT_UPDATE
             local partner = pendingTradePartner
+            if not partner or partner == "" or partner == "Unknown" then
+                local partnerFromFrame = TradeFrameRecipientNameText and TradeFrameRecipientNameText:GetText() or nil
+                partner = UnitName("target") or partnerFromFrame or partner
+            end
             local goldReceived = pendingTradeGold
-            local totalBoxes = pendingTradeBoxes or 0
-            local boxCounts = pendingTradeBoxCounts or {}
+            local tradedBoxes = pendingTradeBoxes or 0
+            local boxCounts = {}
+            local unattributedPickedLocks = pickedLocksUnattributedThisTrade or 0
+
+            if type(pendingTradeBoxCounts) == "table" then
+                for key, count in pairs(pendingTradeBoxCounts) do
+                    AddBoxCount(boxCounts, key, count)
+                end
+            end
 
             -- Add picked locks count to total (for in-window unlocking in slot 7)
+            if type(pickedLockBoxCountsThisTrade) == "table" then
+                for key, count in pairs(pickedLockBoxCountsThisTrade) do
+                    AddBoxCount(boxCounts, key, count)
+                end
+            end
+
+            local totalBoxes = SumBoxCounts(boxCounts) + unattributedPickedLocks
+
             if pickedLocksThisTrade > 0 then
-                totalBoxes = totalBoxes + pickedLocksThisTrade
                 print("|cff00ff00LockSmithPro:|r Added " .. pickedLocksThisTrade .. " in-window unlocks to box count")
             end
 
-            print("|cff00ff00LockSmithPro:|r Trade completed - Gold: " .. goldReceived .. ", Boxes: " .. totalBoxes .. " (traded: " .. (pendingTradeBoxes or 0) .. ", picked: " .. pickedLocksThisTrade .. "), Partner: " .. (partner or "nil") .. ", Running: " .. tostring(LockSmithPro:IsRunning()))
+            print("|cff00ff00LockSmithPro:|r Trade completed - Gold: " .. goldReceived .. ", Boxes: " .. totalBoxes .. " (traded: " .. tradedBoxes .. ", picked: " .. pickedLocksThisTrade .. "), Partner: " .. (partner or "nil") .. ", Running: " .. tostring(LockSmithPro:IsRunning()))
 
             if LockSmithPro:IsRunning() and (goldReceived > 0 or totalBoxes > 0) then
                 -- Track the stats
-                LockSmithPro.Statistics:TrackGoldReceived(goldReceived, partner, boxCounts)
+                LockSmithPro.Statistics:TrackGoldReceived(goldReceived, partner, boxCounts, unattributedPickedLocks)
 
                 -- Track trade partner to prevent popup on "ty" whispers
                 if LockSmithPro.ChatMonitor and LockSmithPro.ChatMonitor.TrackTradePartner and partner then
@@ -334,6 +437,9 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
         -- Trade window closed - DON'T reset state here if trade completed successfully
         -- The UI_INFO_MESSAGE event may fire AFTER TRADE_CLOSED
         -- Only reset if trade was cancelled (not completed)
+        local closedToken = tradeStateToken
+        tradeWindowOpen = false
+
         if not tradeCompleted then
             print("|cff00ff00LockSmithPro:|r Trade cancelled (Picked " .. pickedLocksThisTrade .. " locks)")
         end
@@ -341,22 +447,14 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
         -- Reset state after a short delay to allow UI_INFO_MESSAGE to process
         if C_Timer and C_Timer.After then
             C_Timer.After(0.5, function()
-                pendingTradePartner = nil
-                pendingTradeGold = 0
-                pendingTradeBoxes = 0
-                pendingTradeBoxCounts = nil
-                tradeCompleted = false
-                tradeWindowOpen = false
-                pickedLocksThisTrade = 0
+                if tradeStateToken ~= closedToken then
+                    return
+                end
+
+                ResetTradeTrackingState()
             end)
         else
-            pendingTradePartner = nil
-            pendingTradeGold = 0
-            pendingTradeBoxes = 0
-            pendingTradeBoxCounts = nil
-            tradeCompleted = false
-            tradeWindowOpen = false
-            pickedLocksThisTrade = 0
+            ResetTradeTrackingState()
         end
     end
 end)
