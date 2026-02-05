@@ -214,6 +214,11 @@ end
 -- ================================
 -- Trade Window Tracking
 -- ================================
+-- Key insight from Gargul addon: Use UI_INFO_MESSAGE with ERR_TRADE_COMPLETE
+-- instead of TRADE_ACCEPT_UPDATE for final trade processing.
+-- This fires AFTER all spell casts and trade actions have completed on the server.
+
+local tradeWindowOpen = false  -- Track if trade window is currently open
 
 local tradeFrame = CreateFrame("Frame")
 tradeFrame:RegisterEvent("TRADE_SHOW")
@@ -221,6 +226,7 @@ tradeFrame:RegisterEvent("TRADE_ACCEPT_UPDATE")
 tradeFrame:RegisterEvent("TRADE_CLOSED")
 tradeFrame:RegisterEvent("TRADE_TARGET_ITEM_CHANGED")
 tradeFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+tradeFrame:RegisterEvent("UI_INFO_MESSAGE")  -- Used to detect successful trade completion
 
 tradeFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "TRADE_SHOW" then
@@ -231,6 +237,7 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
         pendingTradeBoxes = 0
         pendingTradeBoxCounts = nil
         tradeCompleted = false
+        tradeWindowOpen = true
         pickedLocksThisTrade = 0  -- Reset lock pick counter
         print("|cff00ff00LockSmithPro:|r Trade opened with: " .. (pendingTradePartner or "Unknown"))
 
@@ -246,45 +253,51 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
         end
 
     elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
-        -- Track Pick Lock spell casts during trade
+        -- Track Pick Lock spell casts during trade (only while trade window is open)
+        if not tradeWindowOpen then return end
+
         local unitTarget, castGUID, spellID = ...
 
         if unitTarget == "player" and IsPickLockSpell(spellID) then
             pickedLocksThisTrade = pickedLocksThisTrade + 1
-            print("|cff00ff00LockSmithPro:|r Pick Lock cast #" .. pickedLocksThisTrade .. " (spell ID: " .. spellID .. ") during active trade")
+            print("|cff00ff00LockSmithPro:|r Pick Lock cast #" .. pickedLocksThisTrade .. " (spell ID: " .. spellID .. ")")
         end
 
     elseif event == "TRADE_ACCEPT_UPDATE" then
         local playerAccepted, targetAccepted = ...
 
-        -- ALWAYS capture trade data on EVERY accept update (handles all edge cases)
-        -- This runs whenever ANYONE clicks accept (you or them, first time or re-accept)
+        -- Capture trade data on every accept update (handles tip changes, re-accepts, etc.)
+        -- We DON'T process the trade here - we wait for UI_INFO_MESSAGE with ERR_TRADE_COMPLETE
         if not tradeCompleted then
             pendingTradeGold = GetTargetTradeMoney() or 0
             pendingTradeBoxes, pendingTradeBoxCounts = CountTradeBoxes()
             print("|cff00ff00LockSmithPro:|r Trade data captured - Gold: " .. pendingTradeGold .. ", Boxes: " .. (pendingTradeBoxes or 0) .. " (Player: " .. playerAccepted .. ", Target: " .. targetAccepted .. ")")
         end
 
-        -- Process trade when both players accept
-        if playerAccepted == 1 and targetAccepted == 1 and not tradeCompleted then
+    elseif event == "UI_INFO_MESSAGE" then
+        -- This is the authoritative "trade completed" event
+        -- ERR_TRADE_COMPLETE fires AFTER all spell casts and trade actions are done on the server
+        local _, message = ...
+
+        if message == ERR_TRADE_COMPLETE and not tradeCompleted then
             tradeCompleted = true
 
-            -- Use the data we captured
+            -- Use the data we captured during TRADE_ACCEPT_UPDATE
             local partner = pendingTradePartner
             local goldReceived = pendingTradeGold
             local totalBoxes = pendingTradeBoxes or 0
-            local boxCounts = pendingTradeBoxCounts
+            local boxCounts = pendingTradeBoxCounts or {}
 
-            -- Add picked locks count to total (for in-window unlocking)
+            -- Add picked locks count to total (for in-window unlocking in slot 7)
             if pickedLocksThisTrade > 0 then
                 totalBoxes = totalBoxes + pickedLocksThisTrade
                 print("|cff00ff00LockSmithPro:|r Added " .. pickedLocksThisTrade .. " in-window unlocks to box count")
             end
 
-            print("|cff00ff00LockSmithPro:|r Processing trade - Gold: " .. goldReceived .. ", Boxes: " .. totalBoxes .. " (traded: " .. (pendingTradeBoxes or 0) .. ", picked: " .. pickedLocksThisTrade .. "), Partner: " .. (partner or "nil") .. ", Running: " .. tostring(LockSmithPro:IsRunning()))
+            print("|cff00ff00LockSmithPro:|r Trade completed - Gold: " .. goldReceived .. ", Boxes: " .. totalBoxes .. " (traded: " .. (pendingTradeBoxes or 0) .. ", picked: " .. pickedLocksThisTrade .. "), Partner: " .. (partner or "nil") .. ", Running: " .. tostring(LockSmithPro:IsRunning()))
 
             if LockSmithPro:IsRunning() and (goldReceived > 0 or totalBoxes > 0) then
-                -- Track the stats immediately
+                -- Track the stats
                 LockSmithPro.Statistics:TrackGoldReceived(goldReceived, partner, boxCounts)
 
                 -- Track trade partner to prevent popup on "ty" whispers
@@ -316,15 +329,35 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
                 print("|cff00ff00LockSmithPro:|r Trade NOT tracked - IsRunning: " .. tostring(LockSmithPro:IsRunning()) .. ", Gold: " .. goldReceived .. ", Boxes: " .. totalBoxes)
             end
         end
+
     elseif event == "TRADE_CLOSED" then
-        -- Reset all trade data
-        print("|cff00ff00LockSmithPro:|r Trade window closed (Picked " .. pickedLocksThisTrade .. " locks this trade)")
-        pendingTradePartner = nil
-        pendingTradeGold = 0
-        pendingTradeBoxes = 0
-        pendingTradeBoxCounts = nil
-        tradeCompleted = false
-        pickedLocksThisTrade = 0
+        -- Trade window closed - DON'T reset state here if trade completed successfully
+        -- The UI_INFO_MESSAGE event may fire AFTER TRADE_CLOSED
+        -- Only reset if trade was cancelled (not completed)
+        if not tradeCompleted then
+            print("|cff00ff00LockSmithPro:|r Trade cancelled (Picked " .. pickedLocksThisTrade .. " locks)")
+        end
+
+        -- Reset state after a short delay to allow UI_INFO_MESSAGE to process
+        if C_Timer and C_Timer.After then
+            C_Timer.After(0.5, function()
+                pendingTradePartner = nil
+                pendingTradeGold = 0
+                pendingTradeBoxes = 0
+                pendingTradeBoxCounts = nil
+                tradeCompleted = false
+                tradeWindowOpen = false
+                pickedLocksThisTrade = 0
+            end)
+        else
+            pendingTradePartner = nil
+            pendingTradeGold = 0
+            pendingTradeBoxes = 0
+            pendingTradeBoxCounts = nil
+            tradeCompleted = false
+            tradeWindowOpen = false
+            pickedLocksThisTrade = 0
+        end
     end
 end)
 
