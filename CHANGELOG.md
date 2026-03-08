@@ -1,5 +1,24 @@
 # LockSmithPro - Changelog
 
+## Version 1.0.1 - Dashboard & Release Automation Update
+
+### New Features
+- Added CurseForge auto-packaging configuration via repository `.pkgmeta`
+- Added one-command tag publishing script (`.build/push-release-tag.ps1`) for release/beta/alpha flows
+
+### Improvements
+- Simplified build tooling by removing legacy manual release/version scripts
+- Updated release documentation to focus on webhook + tag-driven publishing
+
+### Bug Fixes
+- Persisted addon run state across sessions (`enabled` now updates on start/stop)
+- Fixed dashboard ad timer controls to apply immediately when toggled or interval changes
+- Fixed ad cooldown UI so it only updates after a successful advertisement send
+- Normalized invite throttle keys to prevent `name` vs `name-realm` bypasses
+- Updated TOC interface compatibility targets for Wrath/Cata support
+
+---
+
 ## Version 1.0.0 - Initial Release
 
 ### New Features

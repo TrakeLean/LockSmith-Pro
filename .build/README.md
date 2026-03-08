@@ -1,80 +1,45 @@
-# Build & Release Tools
+# Build Tools
 
-This folder contains scripts and documentation for creating releases of LockSmithPro.
+This folder only contains tools still used by the current workflow.
 
-## Files
+## Scripts
 
-### Development Scripts
-- **create-symlink.ps1** - Create symbolic links from GitHub folder to WoW AddOns folders for live development
-- **remove-symlink.ps1** - Remove symbolic links when done developing
-
-### Release Scripts
-- **create-release.ps1** - Automated PowerShell script to create release archives
-- **update-version.ps1** - PowerShell script to update version numbers across all files
-- **update-version.sh** - Bash script to update version numbers (Mac/Linux)
-
-### Documentation
-- **QUICK_RELEASE_GUIDE.md** - Fast reference guide for creating releases
-- **RELEASE_PROCESS.md** - Comprehensive release documentation with step-by-step instructions
+- `create-symlink.ps1`: Create symlinks to WoW AddOns folders for live local testing.
+- `remove-symlink.ps1`: Remove those symlinks.
+- `push-release-tag.ps1`: Create and push a release/beta/alpha tag that triggers CurseForge automatic packaging.
 
 ## Quick Usage
 
-### Development Setup (Live Testing)
-
-**Create symlinks for instant development** - Edit files in GitHub folder, see changes immediately in WoW:
+### Local Development
 
 ```powershell
 # Run as Administrator
 .\.build\create-symlink.ps1
-```
 
-This automatically detects all WoW installations and creates symlinks:
-- Retail (_retail_)
-- Classic Era (_classic_era_)
-- Wrath/Cata Classic (_classic_)
-- Anniversary (_anniversary_)
-
-After running this, any changes you make in your GitHub folder will instantly appear in WoW. Just type `/reload` in-game to see changes.
-
-**Remove symlinks when done**:
-```powershell
-# Run as Administrator
+# Remove symlinks later
 .\.build\remove-symlink.ps1
 ```
 
-You can also manually specify a WoW path:
+### Automatic CurseForge Release
+
 ```powershell
-.\.build\create-symlink.ps1 -WowPath "D:\Games\World of Warcraft"
+# Release
+.\.build\push-release-tag.ps1 -Version "1.0.1" -Channel release
+
+# Beta
+.\.build\push-release-tag.ps1 -Version "1.1.0" -Channel beta -Iteration 1
+
+# Alpha
+.\.build\push-release-tag.ps1 -Version "1.1.0" -Channel alpha -Iteration 1
 ```
 
-### Create a Release
-```powershell
-.\.build\create-release.ps1 -Version "1.0.1" -EditionName "Bug Fix Edition"
-```
+## Webhook
 
-### Update Version Numbers
-```powershell
-.\.build\update-version.ps1 -NewVersion "1.0.1"
-```
+Configure GitHub webhook payload URL once:
 
-## What Gets Included in Releases
+`https://www.curseforge.com/api/projects/1443477/package?token=YOUR_TOKEN`
 
-### ✅ Included
-- All .lua files (Init.lua, SlashCommands.lua)
-- All folders: Core/, Data/, Features/, UI/, logo/
-- LockSmithPro.toc file
-
-### ❌ Excluded (Development Files)
-- .git/, .claude/, .build/, versions/
-- README.md, CHANGELOG.md, Curseforge_Description.mkd
-- All scripts (.ps1, .sh)
-- Documentation files
-
-## Release Workflow
-
-1. Run create-release.ps1 to package the addon
-2. Test the zip file in WoW
-3. Upload to CurseForge
-4. Commit and push to GitHub
-
-See QUICK_RELEASE_GUIDE.md for detailed instructions.
+Tag mapping used by CurseForge:
+- `vX.Y.Z` => release
+- `vX.Y.Z-beta` / `vX.Y.Z-beta.N` => beta
+- `vX.Y.Z-alpha` / `vX.Y.Z-alpha.N` => alpha

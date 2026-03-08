@@ -27,6 +27,9 @@ end
 
 local function CanInvite(sender)
     local normalized = NormalizeSenderName(sender)
+    if normalized == "" then
+        return false
+    end
 
     -- Don't re-invite if they declined this session
     if declinedInvites[normalized] then
@@ -34,9 +37,9 @@ local function CanInvite(sender)
     end
 
     local now = GetTime()
-    local last = lastInviteTime[sender]
+    local last = lastInviteTime[normalized]
     if not last or (now - last) > INVITE_THROTTLE then
-        lastInviteTime[sender] = now
+        lastInviteTime[normalized] = now
         return true
     end
     return false

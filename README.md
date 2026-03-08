@@ -1,7 +1,7 @@
 # LockSmithPro - Professional Lockpicking Service Addon
 
 ![Available on CurseForge](https://img.shields.io/badge/Available_on-CurseForge-6441A4?style=flat&logo=curseforge)
-![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen)
+![Version](https://img.shields.io/badge/Version-1.0.1-brightgreen)
 ![WoW Compatibility](https://img.shields.io/badge/WoW-Classic%20Era%20|%20TBC%20|%20Wrath%20|%20Retail-blue)
 
 **The ultimate lockpicking business automation addon for World of Warcraft!** Transform your Rogue into a professional locksmith with automatic chat monitoring, smart notifications, comprehensive earnings tracking, and powerful automation tools. Built for maximum efficiency and ease of use across all WoW versions.
@@ -330,12 +330,26 @@ After running this, any changes you make in your GitHub folder instantly appear 
 
 ### Creating Releases
 
-See [.build/QUICK_RELEASE_GUIDE.md](.build/QUICK_RELEASE_GUIDE.md) for detailed release instructions.
+LockSmithPro now uses **CurseForge automatic packaging** via Git tags.
 
-**Quick release:**
+1. Configure the GitHub webhook once:
+   - `https://www.curseforge.com/api/projects/1443477/package?token=YOUR_TOKEN`
+2. Push a release tag:
 ```powershell
-.\.build\create-release.ps1 -Version "1.0.1" -EditionName "Bug Fix Edition"
+# Release
+.\.build\push-release-tag.ps1 -Version "1.0.1" -Channel release
+
+# Beta
+.\.build\push-release-tag.ps1 -Version "1.1.0" -Channel beta -Iteration 1
+
+# Alpha
+.\.build\push-release-tag.ps1 -Version "1.1.0" -Channel alpha -Iteration 1
 ```
+
+Tag mapping on CurseForge:
+- `vX.Y.Z` => release
+- `vX.Y.Z-beta` or `vX.Y.Z-beta.N` => beta
+- `vX.Y.Z-alpha` or `vX.Y.Z-alpha.N` => alpha
 
 ### Project Structure
 
@@ -353,7 +367,7 @@ LockSmithPro/
 
 ## 📖 Version History
 
-**Current Version:** 1.0.0
+**Current Version:** 1.0.1
 
 ### Recent Updates
 - Initial release with full feature set

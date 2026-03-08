@@ -222,6 +222,16 @@ local function CreateSettingsPanel()
     end)
     yOffset = yOffset - 25
 
+    -- Debug chat checkbox
+    local debugChatCheckbox = CreateFrame("CheckButton", "LockSmithProDebugChatCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    debugChatCheckbox:SetPoint("TOPLEFT", 16, yOffset)
+    _G[debugChatCheckbox:GetName() .. "Text"]:SetText("Show Debug Logs in Chat")
+    debugChatCheckbox:SetChecked(LockSmithProDB.debugChat == true)
+    debugChatCheckbox:SetScript("OnClick", function(self)
+        LockSmithProDB.debugChat = self:GetChecked() == true
+    end)
+    yOffset = yOffset - 25
+
     -- Auto-mark self with star checkbox
     local autoMarkSelfCheckbox = CreateFrame("CheckButton", "LockSmithProAutoMarkSelfCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     autoMarkSelfCheckbox:SetPoint("TOPLEFT", 16, yOffset)
@@ -655,5 +665,12 @@ function LockSmithPro.UI:OpenSettingsGUI()
         -- Call twice - Blizzard bug requires this to actually open to the addon
         InterfaceOptionsFrame_OpenToCategory(settingsPanel)
         InterfaceOptionsFrame_OpenToCategory(settingsPanel)
+    end
+end
+
+-- Ensure Blizzard Settings/AddOns registration exists on login
+function LockSmithPro.UI:EnsureSettingsPanelRegistered()
+    if not _G["LockSmithProSettingsPanel"] then
+        CreateSettingsPanel()
     end
 end

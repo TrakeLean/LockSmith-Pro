@@ -65,20 +65,20 @@ function LockSmithPro.Advertisement:SendAdvertisement()
 
     if sentCount > 0 then
         print("|cff00ff00LockSmithPro:|r Advertisement sent to " .. sentCount .. " channel(s)")
+
+        -- Notify dashboard only on successful sends
+        if LockSmithPro.Dashboard then
+            LockSmithPro.Dashboard:OnAdSent()
+        end
+
+        self:ClearAdReady()
+
+        -- Restart timer to sync button cooldown with adReady notification
+        if LockSmithProDB.adTimerEnabled then
+            self:RestartTimer()
+        end
     else
         print("|cffff0000LockSmithPro:|r No channels available for advertisement")
-    end
-
-    -- Notify dashboard
-    if LockSmithPro.Dashboard then
-        LockSmithPro.Dashboard:OnAdSent()
-    end
-
-    self:ClearAdReady()
-
-    -- Restart timer to sync button cooldown with adReady notification
-    if LockSmithProDB.adTimerEnabled then
-        self:RestartTimer()
     end
 end
 

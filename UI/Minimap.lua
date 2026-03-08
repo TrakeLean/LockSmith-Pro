@@ -7,6 +7,31 @@ LockSmithPro.Minimap = {}
 local minimapButton = nil
 local isDragging = false
 
+local function RefreshMinimapTooltip(button)
+    GameTooltip:SetOwner(button, "ANCHOR_LEFT")
+    GameTooltip:SetText("|cff00ff00LockSmithPro|r", 1, 1, 1)
+
+    local skill, maxSkill = 0, 0
+    if LockSmithPro.Skills and LockSmithPro.Skills.GetLockpickingSkill then
+        skill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
+    end
+
+    if LockSmithPro:IsRunning() then
+        GameTooltip:AddLine("|cff00ff00Status: Running|r", 1, 1, 1)
+    else
+        GameTooltip:AddLine("|cffff0000Status: Stopped|r", 1, 1, 1)
+    end
+    GameTooltip:AddLine("Lockpicking: " .. skill .. "/" .. maxSkill, 1, 1, 1)
+
+    GameTooltip:AddLine(" ", 1, 1, 1)
+    GameTooltip:AddLine("|cffffffffLeft-Click:|r Toggle Dashboard", 0.7, 0.7, 0.7)
+    GameTooltip:AddLine("|cffffffffRight-Click:|r Start/Stop", 0.7, 0.7, 0.7)
+    GameTooltip:AddLine("|cffffffffShift+Click:|r Send Ad", 0.7, 0.7, 0.7)
+    GameTooltip:AddLine("|cffffffffDrag:|r Move Button", 0.7, 0.7, 0.7)
+
+    GameTooltip:Show()
+end
+
 -- Create the minimap button
 local function CreateMinimapButton()
     -- Create the button
@@ -20,10 +45,22 @@ local function CreateMinimapButton()
 
     -- Create the icon texture (using a lockpicking-themed icon)
     local icon = button:CreateTexture(nil, "BACKGROUND")
-    icon:SetSize(20, 20)
+    icon:SetSize(18, 18)
     icon:SetPoint("CENTER", 0, 0)
     -- Using the Lockpicking skill icon
     icon:SetTexture("Interface\\Icons\\Spell_Nature_MoonKey")
+    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
+    -- Keep the icon inside the circular minimap frame
+    if button.CreateMaskTexture and icon.AddMaskTexture then
+        local mask = button:CreateMaskTexture()
+        mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+        mask:SetPoint("CENTER", icon, "CENTER", 0, 0)
+        mask:SetSize(18, 18)
+        icon:AddMaskTexture(mask)
+        button.iconMask = mask
+    end
+
     button.icon = icon
 
     -- Create border/background
@@ -34,31 +71,19 @@ local function CreateMinimapButton()
 
     -- Create highlight
     local highlight = button:CreateTexture(nil, "HIGHLIGHT")
-    highlight:SetSize(20, 20)
+    highlight:SetSize(18, 18)
     highlight:SetPoint("CENTER", 0, 0)
     highlight:SetTexture("Interface\\Icons\\Spell_Nature_MoonKey")
+    highlight:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     highlight:SetBlendMode("ADD")
+
+    if button.iconMask and highlight.AddMaskTexture then
+        highlight:AddMaskTexture(button.iconMask)
+    end
 
     -- Tooltip
     button:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:SetText("|cff00ff00LockSmithPro|r", 1, 1, 1)
-
-        if LockSmithPro:IsRunning() then
-            local skill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
-            GameTooltip:AddLine("|cff00ff00Status: Running|r", 1, 1, 1)
-            GameTooltip:AddLine("Lockpicking: " .. skill .. "/" .. maxSkill, 1, 1, 1)
-        else
-            GameTooltip:AddLine("|cffff0000Status: Stopped|r", 1, 1, 1)
-        end
-
-        GameTooltip:AddLine(" ", 1, 1, 1)
-        GameTooltip:AddLine("|cffffffffLeft-Click:|r Toggle Dashboard", 0.7, 0.7, 0.7)
-        GameTooltip:AddLine("|cffffffffRight-Click:|r Start/Stop", 0.7, 0.7, 0.7)
-        GameTooltip:AddLine("|cffffffffShift+Click:|r Send Ad", 0.7, 0.7, 0.7)
-        GameTooltip:AddLine("|cffffffffDrag:|r Move Button", 0.7, 0.7, 0.7)
-
-        GameTooltip:Show()
+        RefreshMinimapTooltip(self)
     end)
 
     button:SetScript("OnLeave", function(self)
@@ -78,6 +103,11 @@ local function CreateMinimapButton()
         elseif buttonPressed == "RightButton" then
             -- Right-click: Toggle start/stop
             LockSmithPro:Toggle()
+        end
+
+        -- Refresh tooltip immediately if the mouse is still over the button
+        if GameTooltip:IsOwned(self) then
+            RefreshMinimapTooltip(self)
         end
     end)
 

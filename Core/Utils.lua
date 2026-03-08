@@ -5,6 +5,26 @@ LockSmithPro = LockSmithPro or {}
 LockSmithPro.Utils = {}
 
 -- ================================
+-- Chat Logging
+-- ================================
+
+function LockSmithPro:IsDebugChatEnabled()
+    return LockSmithProDB and LockSmithProDB.debugChat == true
+end
+
+function LockSmithPro:DebugPrint(message)
+    if not self:IsDebugChatEnabled() then
+        return
+    end
+
+    if message == nil then
+        return
+    end
+
+    print("|cff66ccffLockSmithPro Debug:|r " .. tostring(message))
+end
+
+-- ================================
 -- Timer System
 -- ================================
 

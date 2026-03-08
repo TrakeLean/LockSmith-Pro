@@ -5,7 +5,7 @@ LockSmithPro = LockSmithPro or {}
 
 -- Addon metadata
 local addonName = "LockSmithPro"
-local addonVersion = "1.0.0"
+local addonVersion = "1.0.1"
 
 -- Runtime state
 local isRunning = false
@@ -41,6 +41,7 @@ local defaultSettings = {
 
     -- Sound settings
     playSoundEffects = true,
+    debugChat = false,
 
     -- Raid marker settings
     autoMarkSelf = true,
@@ -116,6 +117,9 @@ local function InitializeSavedVariables()
     if LockSmithProDB.playSoundEffects == nil then
         LockSmithProDB.playSoundEffects = defaultSettings.playSoundEffects
     end
+    if LockSmithProDB.debugChat == nil then
+        LockSmithProDB.debugChat = defaultSettings.debugChat
+    end
     if LockSmithProDB.autoMarkSelf == nil then
         LockSmithProDB.autoMarkSelf = defaultSettings.autoMarkSelf
     end
@@ -180,6 +184,7 @@ function LockSmithPro:Start()
     end
 
     isRunning = true
+    LockSmithProDB.enabled = true
     LockSmithPro.Statistics:InitSession()
 
     -- Update skill cache
@@ -207,6 +212,7 @@ function LockSmithPro:Stop()
     end
 
     isRunning = false
+    LockSmithProDB.enabled = false
 
     -- Save session stats
     LockSmithPro.Statistics:SaveSessionStats()
@@ -257,6 +263,11 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         end
 
     elseif event == "PLAYER_LOGIN" then
+        -- Register Blizzard Settings/AddOns panel so it appears in the AddOns list
+        if LockSmithPro.UI and LockSmithPro.UI.EnsureSettingsPanelRegistered then
+            LockSmithPro.UI:EnsureSettingsPanelRegistered()
+        end
+
         -- Initialize dashboard
         if LockSmithPro.Dashboard then
             LockSmithPro.Dashboard:Initialize()

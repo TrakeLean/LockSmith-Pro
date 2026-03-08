@@ -1,0 +1,8 @@
+package-as: LockSmithPro
+
+ignore:
+  - .build
+  - versions
+  - README.md
+  - CHANGELOG.md
+  - Curseforge_Description.mkd

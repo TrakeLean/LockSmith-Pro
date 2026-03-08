@@ -1392,6 +1392,7 @@ function LockSmithPro.Dashboard:InitializeSettings(content)
     -- UI & Sound Settings
     CreateHeader("UI & Sound")
     CreateCheckbox("Play Sound Effects", "playSoundEffects")
+    CreateCheckbox("Show Debug Logs in Chat", "debugChat")
     CreateCheckbox("Auto-mark Self with Star (Party Leader)", "autoMarkSelf")
     CreateCheckbox("Auto-mark Customers with Raid Icons", "autoMarkCustomers")
     yOffset = yOffset - 10
@@ -1470,6 +1471,14 @@ function LockSmithPro.Dashboard:InitializeSettings(content)
     yOffset = yOffset - 5
 
     local timerCheckbox = CreateCheckbox("Enable Auto-Advertisement Timer", "adTimerEnabled")
+    timerCheckbox:SetScript("OnClick", function(self)
+        LockSmithProDB.adTimerEnabled = self:GetChecked()
+        if LockSmithProDB.adTimerEnabled and LockSmithPro:IsRunning() then
+            LockSmithPro.Advertisement:StartAdTimer()
+        else
+            LockSmithPro.Advertisement:StopAdTimer()
+        end
+    end)
     yOffset = yOffset - 10
 
     -- Timer interval - show current value and +/- buttons
@@ -1494,6 +1503,9 @@ function LockSmithPro.Dashboard:InitializeSettings(content)
         local new = math.max(30, current - 10)
         LockSmithProDB.adTimerInterval = new
         timerValue:SetText("|cff00ff00" .. new .. "s|r")
+        if LockSmithProDB.adTimerEnabled and LockSmithPro:IsRunning() then
+            LockSmithPro.Advertisement:RestartTimer()
+        end
     end)
 
     local increaseBtn = CreateFrame("Button", nil, timerContainer, "GameMenuButtonTemplate")
@@ -1505,6 +1517,9 @@ function LockSmithPro.Dashboard:InitializeSettings(content)
         local new = math.min(600, current + 10)
         LockSmithProDB.adTimerInterval = new
         timerValue:SetText("|cff00ff00" .. new .. "s|r")
+        if LockSmithProDB.adTimerEnabled and LockSmithPro:IsRunning() then
+            LockSmithPro.Advertisement:RestartTimer()
+        end
     end)
 
     yOffset = yOffset - 40
