@@ -21,7 +21,7 @@ Available for download at [CurseForge](https://www.curseforge.com/wow/addons/loc
 - **Recent trade partner tracking** - Prevents duplicate notifications from the same customer
 
 ### **📢 Professional Advertisement System**
-- **Customizable messages** - Full support for raid icons ({skull}, {rt1}, etc.) and special characters (♥)
+- **Customizable messages** - Full support for raid icons ({skull}, {rt1}, etc.) and special characters (<3)
 - **Multi-channel broadcasting** - Send ads to Trade, General, LFG, and/or Yell channels
 - **Automatic timer mode** - Get "Ad Ready" popups at configurable intervals (30s - 10 minutes)
 - **Manual send option** - One-click broadcast whenever you want
@@ -219,7 +219,7 @@ Sorry, my lockpicking skill (%CURRENT%) is too low for that box (requires %REQUI
 
 **Thank-You Response:**
 ```
-Thank you for the %TIP% tip! ♥
+Thank you for the %TIP% tip! <3
 ```
 
 ### Available Icons & Variables
@@ -229,7 +229,7 @@ Thank you for the %TIP% tip! ♥
 - Named icons: `{skull}` `{circle}` `{diamond}` `{triangle}` `{moon}` `{square}` `{cross}` `{star}`
 
 **Special Characters:**
-- `♥` - Heart symbol
+- `<3` - Heart text
 - Any Unicode character supported by WoW
 
 **Variables:**

@@ -2,6 +2,8 @@
 
 This folder only contains tools still used by the current workflow.
 
+For release steps, see `RELEASE_CHECKLIST.md`.
+
 ## Scripts
 
 - `create-symlink.ps1`: Create symlinks to WoW AddOns folders for live local testing.

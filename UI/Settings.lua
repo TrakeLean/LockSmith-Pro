@@ -286,7 +286,7 @@ local function CreateSettingsPanel()
     adIconHelp:SetPoint("TOPLEFT", 16, yOffset)
     adIconHelp:SetWidth(450)
     adIconHelp:SetJustifyH("LEFT")
-    adIconHelp:SetText("|cff888888Available icons: {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8} {skull} {circle} {diamond} {triangle} {moon} {square} {cross} {star} ♥|r")
+    adIconHelp:SetText("|cff888888Available icons: {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8} {skull} {circle} {diamond} {triangle} {moon} {square} {cross} {star} <3|r")
     yOffset = yOffset - 25
 
     -- Set default ad message
@@ -511,7 +511,7 @@ local function CreateSettingsPanel()
     thankYouIconHelp:SetPoint("TOPLEFT", 16, yOffset)
     thankYouIconHelp:SetWidth(450)
     thankYouIconHelp:SetJustifyH("LEFT")
-    thankYouIconHelp:SetText("|cff888888Available icons: {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8} {skull} {circle} {diamond} {triangle} {moon} {square} {cross} {star} ♥|r")
+    thankYouIconHelp:SetText("|cff888888Available icons: {rt1} {rt2} {rt3} {rt4} {rt5} {rt6} {rt7} {rt8} {skull} {circle} {diamond} {triangle} {moon} {square} {cross} {star} <3|r")
     yOffset = yOffset - 25
 
     -- Set default thank-you message
