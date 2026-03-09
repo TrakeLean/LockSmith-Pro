@@ -1,5 +1,6 @@
 package-as: LockSmithPro
 manual-changelog: CHANGELOG.md
+markup-type: markdown
 
 ignore:
   - .build
