@@ -48,4 +48,4 @@ Mocks cannot emulate Blizzard's secure execution/taint engine, the live server, 
 6. Let busy city chat run for at least 30 minutes with the board open and hidden. Resize repeatedly, clear jobs, and restart the advertisement timer. Compare memory after garbage collection and frame counts after warm-up; they should plateau. Verify long Forever names wrap without covering action buttons.
 7. Send advertisements manually and through the Yell button. Check available channels in the client language; advertisement lookup still uses the existing English channel labels. Monitoring itself uses numeric channel IDs and is independent of locale.
 
-This build is prepared for in-game validation. No release tag or CurseForge upload has been performed.
+Release tag `v1.1.0` has been pushed. CurseForge package creation has not yet been confirmed; automatic packaging was changed to all commits for troubleshooting. In-game validation remains pending.
