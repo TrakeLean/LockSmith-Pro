@@ -8,9 +8,6 @@
 
 Available for download at [CurseForge](https://www.curseforge.com/wow/addons/locksmithpro).
 
-![LockSmithPro Dashboard](https://via.placeholder.com/800x450.png?text=LockSmithPro+Dashboard+Screenshot)
-
-
 ## Version 1.1.0 compatibility update
 
 This build targets Retail 12.1.5 (`120105`), Classic Era 1.15.9 (`11509`), TBC Anniversary 2.5.6 (`20506`), MoP Classic 5.5.4 (`50504`), and Forever 1.60.1 (`16001`). It includes separate Mainline, Vanilla, TBC, Mists, and Camelot manifests. Client metadata and API references are recorded in [.build/COMPATIBILITY.md](.build/COMPATIBILITY.md).
