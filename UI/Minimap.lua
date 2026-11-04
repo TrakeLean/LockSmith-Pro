@@ -21,7 +21,7 @@ local function RefreshMinimapTooltip(button)
     else
         GameTooltip:AddLine("|cffff0000Status: Stopped|r", 1, 1, 1)
     end
-    GameTooltip:AddLine("Lockpicking: " .. skill .. "/" .. maxSkill, 1, 1, 1)
+    GameTooltip:AddLine("Lockpicking: " .. LockSmithPro.Skills:GetDisplayText(), 1, 1, 1)
 
     GameTooltip:AddLine(" ", 1, 1, 1)
     GameTooltip:AddLine("|cffffffffLeft-Click:|r Toggle Dashboard", 0.7, 0.7, 0.7)

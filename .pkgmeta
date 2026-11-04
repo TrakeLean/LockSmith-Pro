@@ -7,3 +7,6 @@ ignore:
   - versions
   - README.md
   - Curseforge_Description.mkd
+  - tests
+  - dist
+  - .github

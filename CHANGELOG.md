@@ -1,5 +1,16 @@
 # LockSmithPro - Changelog
 
+## Version 1.1.0 - Current clients and bounded memory
+
+- Target current Retail, Era, TBC Anniversary, MoP, and Forever clients with flavor manifests.
+- Preserve Forever surnames and realm-qualified identities in all customer actions.
+- Add optional phrase-triggered auto-invites with filtering, cooldowns and permission checks.
+- Reuse job cards and animations; bound the board to 100 customers and expire stale jobs.
+- Replace frame-based ad timers, remove unused mail tracking and bound transient caches.
+- Handle restricted chat data, modern chat helpers and Forever skill lookups; unknown skill no longer means zero.
+- Fix settings navigation and popup textures. Cancel old-session thank-you actions and retain the actual trade partner.
+- Add Lua 5.1 regressions for five client profiles. Live client smoke testing remains required before publishing.
+
 ## Version 1.0.1 - Dashboard & Release Automation Update
 
 ### New Features

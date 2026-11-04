@@ -1,0 +1,33 @@
+## Interface: 20506
+## Title: LockSmithPro
+## Notes: Automated lockpicking service addon for Rogues. Monitors chat for lockpick requests, manages invites, and tracks tips.
+## Author: 0xTrk
+## Version: 1.1.0
+## IconTexture: Interface\AddOns\LockSmithPro\logo\logonoText.tga
+## SavedVariables: LockSmithProDB
+
+# Compatibility
+Core\Compatibility.lua
+
+# Data
+Data\Database.lua
+
+# Core Systems
+Core\Utils.lua
+Core\Skills.lua
+Core\Statistics.lua
+
+# Features
+Features\Advertisement.lua
+Features\AutoResponse.lua
+Features\ChatMonitor.lua
+
+# UI
+UI\Dashboard.lua
+UI\Notification.lua
+UI\Settings.lua
+UI\Minimap.lua
+
+# Initialization
+Init.lua
+SlashCommands.lua

@@ -28,33 +28,12 @@ end
 -- Timer System
 -- ================================
 
-local activeTimers = {}
-local nextTimerID = 1
-
 function LockSmithPro.Utils:ScheduleRepeatingTimer(callback, interval)
-    local timerID = nextTimerID
-    nextTimerID = nextTimerID + 1
-
-    local frame = CreateFrame("Frame")
-    local elapsed = 0
-
-    frame:SetScript("OnUpdate", function(self, delta)
-        elapsed = elapsed + delta
-        if elapsed >= interval then
-            elapsed = 0
-            callback()
-        end
-    end)
-
-    activeTimers[timerID] = frame
-    return timerID
+    return C_Timer.NewTicker(math.max(1, tonumber(interval) or 60), callback)
 end
 
-function LockSmithPro.Utils:CancelTimer(timerID)
-    if activeTimers[timerID] then
-        activeTimers[timerID]:SetScript("OnUpdate", nil)
-        activeTimers[timerID] = nil
-    end
+function LockSmithPro.Utils:CancelTimer(timer)
+    if timer then timer:Cancel() end
 end
 
 -- ================================
@@ -91,19 +70,18 @@ end
 local lastMessageTime = {}
 local MESSAGE_THROTTLE = 10 -- seconds between messages to same target
 
+local lastWhisperTime = -math.huge
 function LockSmithPro.Utils:CanSendMessage(target)
-    local now = GetTime()
-    if not lastMessageTime[target] or (now - lastMessageTime[target]) > MESSAGE_THROTTLE then
-        lastMessageTime[target] = now
-        return true
-    end
-    return false
+    return LockSmithPro.Compat:Remember(lastMessageTime, LockSmithPro.Compat:NameKey(target), MESSAGE_THROTTLE)
 end
 
 function LockSmithPro.Utils:SendThrottledWhisper(target, message)
+    if not LockSmithPro.Compat:CanAutomate() then return false end
+    if not LockSmithPro.Compat:IsString(message) or message == "" or #message > 255 then return false end
+    if GetTime() - lastWhisperTime < 2 then return false end
     if self:CanSendMessage(target) then
-        SendChatMessage(message, "WHISPER", nil, target)
-        return true
+        lastWhisperTime = GetTime()
+        return LockSmithPro.Compat:SendChat(message, "WHISPER", target)
     end
     return false
 end
@@ -123,39 +101,34 @@ end
 function LockSmithPro.Utils:SendToChannel(message, channelName)
     local channelID = self:GetChannelID(channelName)
     if channelID then
-        SendChatMessage(message, "CHANNEL", nil, channelID)
-        return true
+        return LockSmithPro.Compat:SendChat(message, "CHANNEL", channelID)
     end
     return false
 end
 
--- Invite helper with API fallbacks
-function LockSmithPro.Utils:InvitePlayer(target)
-    if not target or target == "" then
-        return false
+-- All invite entry points share cooldowns and group checks.
+local inviteTimes = {}
+local lastInviteTime = -math.huge
+function LockSmithPro.Utils:InvitePlayer(target, automatic)
+    local compat = LockSmithPro.Compat
+    local key = compat:NameKey(target)
+    if not key or (InCombatLockdown and InCombatLockdown()) then return false end
+    if automatic and not compat:CanAutomate() then return false end
+    if compat:IsGroupMember(target) then return false end
+    if C_PartyInfo and C_PartyInfo.CanInvite and not C_PartyInfo.CanInvite() then return false end
+    if IsInGroup and IsInGroup() then
+        if not (UnitIsGroupLeader("player") or (UnitIsGroupAssistant and UnitIsGroupAssistant("player"))) then return false end
+        local capacity = IsInRaid and IsInRaid() and 40 or 5
+        if GetNumGroupMembers() >= capacity then return false end
     end
-
-    -- Notify ChatMonitor that we're sending an invite
-    if LockSmithPro.ChatMonitor and LockSmithPro.ChatMonitor.OnInviteSent then
-        LockSmithPro.ChatMonitor:OnInviteSent(target)
-    end
-
-    if C_PartyInfo and C_PartyInfo.InviteUnit then
-        C_PartyInfo.InviteUnit(target)
-        return true
-    end
-
-    if InviteUnit then
-        InviteUnit(target)
-        return true
-    end
-
-    if InviteByName then
-        InviteByName(target)
-        return true
-    end
-
-    return false
+    if GetTime() - lastInviteTime < 2 then return false end
+    if not compat:Remember(inviteTimes, key, 30) then return false end
+    local invite = C_PartyInfo and C_PartyInfo.InviteUnit or InviteUnit or InviteByName
+    if not invite then return false end
+    lastInviteTime = GetTime()
+    local ok = pcall(invite, target)
+    if ok and LockSmithPro.ChatMonitor then LockSmithPro.ChatMonitor:OnInviteSent(target) end
+    return ok
 end
 
 -- ================================
@@ -173,23 +146,13 @@ local markerFrame = CreateFrame("Frame")
 local function SetPlayerRaidMarker()
     -- SetRaidTarget: 1=Star, 2=Circle, 3=Diamond, 4=Triangle, 5=Moon, 6=Square, 7=Cross, 8=Skull
     if SetRaidTarget and LockSmithProDB and LockSmithProDB.autoMarkSelf then
-        SetRaidTarget("player", 1)  -- 1 = Star
+        pcall(SetRaidTarget, "player", 1)  -- 1 = Star
     end
 end
 
 -- Get normalized player name
 local function NormalizePlayerName(name)
-    if type(name) ~= "string" then
-        return ""
-    end
-
-    local base = name
-    local dash = string.find(base, "-", 1, true)
-    if dash then
-        base = string.sub(base, 1, dash - 1)
-    end
-
-    return string.lower(base)
+    return LockSmithPro.Compat:NameKey(name) or ""
 end
 
 -- Set raid marker on a customer
@@ -208,7 +171,7 @@ local function SetCustomerRaidMarker(unitID, playerName)
     if not iconIndex then return end  -- All icons used
 
     -- Set the marker
-    SetRaidTarget(unitID, iconIndex)
+    if not pcall(SetRaidTarget, unitID, iconIndex) then return end
     markedPlayers[normalized] = iconIndex
 
     -- Move to next icon for next customer
@@ -219,7 +182,7 @@ end
 local function MarkAllCustomers()
     if not LockSmithProDB or not LockSmithProDB.autoMarkCustomers then return end
 
-    local playerName = UnitName("player")
+    local playerName = LockSmithPro.Compat:UnitAddress("player")
     local playerNormalized = NormalizePlayerName(playerName)
 
     -- Check if in raid
@@ -227,7 +190,7 @@ local function MarkAllCustomers()
     if inRaid then
         local count = GetNumGroupMembers and GetNumGroupMembers() or (GetNumRaidMembers and GetNumRaidMembers() or 0)
         for i = 1, count do
-            local member = UnitName("raid" .. i)
+            local member = LockSmithPro.Compat:UnitAddress("raid" .. i)
             if member then
                 local normalized = NormalizePlayerName(member)
                 if normalized ~= playerNormalized and normalized ~= "" then
@@ -238,7 +201,7 @@ local function MarkAllCustomers()
     else
         local count = GetNumSubgroupMembers and GetNumSubgroupMembers() or (GetNumPartyMembers and GetNumPartyMembers() or 0)
         for i = 1, count do
-            local member = UnitName("party" .. i)
+            local member = LockSmithPro.Compat:UnitAddress("party" .. i)
             if member then
                 local normalized = NormalizePlayerName(member)
                 if normalized ~= playerNormalized and normalized ~= "" then
@@ -251,34 +214,13 @@ end
 
 -- Check if we should set the marker
 local function CheckAndSetMarker()
-    -- Only set marker once per group
-    if hasSetMarker then
-        -- Check for new customers to mark
-        MarkAllCustomers()
-        return
+    if not LockSmithPro.Compat:CanAutomate() or (InCombatLockdown and InCombatLockdown()) then return end
+    if not UnitIsGroupLeader or not UnitIsGroupLeader("player") then return end
+    if not hasSetMarker then
+        SetPlayerRaidMarker()
+        hasSetMarker = true
     end
-
-    -- Check if we're in a party and are the leader
-    local isLeader = UnitIsGroupLeader and UnitIsGroupLeader("player")
-    if not isLeader then
-        -- For Classic/TBC compatibility
-        isLeader = (GetNumGroupMembers and GetNumGroupMembers() > 0) or (GetNumPartyMembers and GetNumPartyMembers() > 0)
-    end
-
-    if isLeader then
-        -- Small delay to ensure group is formed
-        local delayFrame = CreateFrame("Frame")
-        local elapsed = 0
-        delayFrame:SetScript("OnUpdate", function(self, delta)
-            elapsed = elapsed + delta
-            if elapsed >= 0.5 then
-                SetPlayerRaidMarker()
-                MarkAllCustomers()
-                hasSetMarker = true
-                self:SetScript("OnUpdate", nil)
-            end
-        end)
-    end
+    MarkAllCustomers()
 end
 
 -- Reset marker flag when leaving group

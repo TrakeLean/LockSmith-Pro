@@ -27,3 +27,6 @@ LockSmithPro/
 
 # Build/maintenance folder (tracked in repo)
 # .build/
+
+# Local distributables
+dist/

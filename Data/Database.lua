@@ -220,9 +220,13 @@ local function DetectWoWVersion()
     local version, build, date, tocversion = GetBuildInfo()
 
     -- Interface version ranges
-    if tocversion >= 100000 then
+    if LockSmithPro.Compat:IsForever() then
+        return "forever"
+    elseif tocversion >= 100000 then
         return "retail" -- Retail (Dragonflight+)
-    elseif tocversion >= 40000 and tocversion < 100000 then
+    elseif tocversion >= 50000 and tocversion < 100000 then
+        return "mop"
+    elseif tocversion >= 40000 and tocversion < 50000 then
         return "cata" -- Cataclysm
     elseif tocversion >= 30000 and tocversion < 40000 then
         return "wrath" -- Wrath of the Lich King
@@ -246,7 +250,7 @@ function LockSmithPro:GetRelevantBoxes()
         -- Include if no expansion specified (generic) or matches current expansion or earlier
         if not data.expansion or data.expansion == "generic" then
             relevant[key] = data
-        elseif currentExp == "classic" and data.expansion == "classic" then
+        elseif (currentExp == "classic" or currentExp == "forever") and data.expansion == "classic" then
             relevant[key] = data
         elseif currentExp == "tbc" and (data.expansion == "classic" or data.expansion == "tbc") then
             relevant[key] = data
@@ -254,7 +258,7 @@ function LockSmithPro:GetRelevantBoxes()
             relevant[key] = data
         elseif currentExp == "cata" and (data.expansion == "classic" or data.expansion == "tbc" or data.expansion == "wrath" or data.expansion == "cata") then
             relevant[key] = data
-        elseif currentExp == "retail" then
+        elseif currentExp == "retail" or currentExp == "mop" then
             relevant[key] = data -- Include all for retail
         end
     end
@@ -269,7 +273,7 @@ end
 -- Function to identify box type from message
 -- ONLY identifies boxes from item links, not from text matching
 function LockSmithPro:IdentifyBoxType(message)
-    if type(message) ~= "string" then
+    if not LockSmithPro.Compat:IsString(message) then
         return nil
     end
 
@@ -287,7 +291,7 @@ end
 
 -- Resolve box data from an item link or name
 function LockSmithPro:GetBoxDataFromItemLink(itemLink, itemName)
-    if type(itemLink) == "string" then
+    if LockSmithPro.Compat:IsString(itemLink) then
         local itemID = tonumber(string.match(itemLink, "item:(%d+)"))
         if itemID and self.BoxDatabaseById and self.BoxDatabaseById[itemID] then
             local key = self.BoxDatabaseById[itemID]
@@ -295,7 +299,7 @@ function LockSmithPro:GetBoxDataFromItemLink(itemLink, itemName)
         end
     end
 
-    if type(itemName) == "string" then
+    if LockSmithPro.Compat:IsString(itemName) then
         return self:IdentifyBoxType(itemName)
     end
 

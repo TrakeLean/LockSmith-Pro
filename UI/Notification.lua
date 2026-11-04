@@ -136,7 +136,7 @@ local function CreateNotificationPopup()
 
     -- Title
     local titleBg = frame:CreateTexture(nil, "BACKGROUND")
-    titleBg:SetTexture(0, 0, 0, 0.8)
+    titleBg:SetColorTexture(0, 0, 0, 0.8)
     titleBg:SetPoint("TOPLEFT", 5, -5)
     titleBg:SetPoint("TOPRIGHT", -5, -5)
     titleBg:SetHeight(30)
@@ -257,12 +257,12 @@ function LockSmithPro.UI:ShowNotificationPopup(sender, boxData, channelName, req
     end
 
     local currentSkill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
-    activeNotification.yourSkill:SetText("|cff00ff00 Your Skill:|r " .. currentSkill .. "/" .. maxSkill)
+    activeNotification.yourSkill:SetText("|cff00ff00 Your Skill:|r " .. LockSmithPro.Skills:GetDisplayText())
 
     -- Setup button actions
     activeNotification.inviteBtn:SetScript("OnClick", function(self)
         if LockSmithPro.Utils and LockSmithPro.Utils.InvitePlayer and LockSmithPro.Utils:InvitePlayer(sender) then
-            print("|cff00ff00LockSmithPro:|r Invited " .. sender)
+            print("|cff00ff00LockSmithPro:|r Invitation requested for " .. sender)
         else
             print("|cffff0000LockSmithPro:|r Unable to invite " .. sender)
         end
@@ -271,7 +271,7 @@ function LockSmithPro.UI:ShowNotificationPopup(sender, boxData, channelName, req
 
     activeNotification.whisperBtn:SetScript("OnClick", function(self)
         -- Open whisper window
-        ChatFrame_SendTell(sender)
+        LockSmithPro.Compat:OpenWhisper(sender)
         activeNotification:Hide()
     end)
 

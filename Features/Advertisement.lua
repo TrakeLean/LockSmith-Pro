@@ -27,44 +27,20 @@ function LockSmithPro.Advertisement:SendAdvertisement()
     local message = self:ProcessAdMessage(LockSmithProDB.adMessage)
     local sentCount = 0
 
-    -- Send to Trade
-    if LockSmithProDB.adChannels.trade then
-        local tradeID = GetChannelName("Trade - City")
-        if not tradeID or tradeID == 0 then
-            tradeID = GetChannelName("Trade")
-        end
-        if tradeID and tradeID > 0 then
-            SendChatMessage(message, "CHANNEL", nil, tradeID)
-            sentCount = sentCount + 1
-        end
+    local function Send(channel, target)
+        if LockSmithPro.Compat:SendChat(message, channel, target) then sentCount = sentCount + 1 end
     end
-
-    -- Send to General
-    if LockSmithProDB.adChannels.general then
-        local generalID = GetChannelName("General")
-        if generalID and generalID > 0 then
-            SendChatMessage(message, "CHANNEL", nil, generalID)
-            sentCount = sentCount + 1
+    local channelNames = {trade = "Trade", general = "General", lfg = "LookingForGroup"}
+    for key, name in pairs(channelNames) do
+        if LockSmithProDB.adChannels[key] then
+            local id = GetChannelName(name)
+            if id and id > 0 then Send("CHANNEL", id) end
         end
     end
-
-    -- Send to LFG
-    if LockSmithProDB.adChannels.lfg then
-        local lfgID = GetChannelName("LookingForGroup")
-        if lfgID and lfgID > 0 then
-            SendChatMessage(message, "CHANNEL", nil, lfgID)
-            sentCount = sentCount + 1
-        end
-    end
-
-    -- Send to Yell
-    if LockSmithProDB.adChannels.yell then
-        SendChatMessage(message, "YELL")
-        sentCount = sentCount + 1
-    end
+    if LockSmithProDB.adChannels.yell then Send("YELL") end
 
     if sentCount > 0 then
-        print("|cff00ff00LockSmithPro:|r Advertisement sent to " .. sentCount .. " channel(s)")
+        print("|cff00ff00LockSmithPro:|r Advertisement submitted to " .. sentCount .. " channel(s)")
 
         -- Notify dashboard only on successful sends
         if LockSmithPro.Dashboard then
@@ -78,7 +54,7 @@ function LockSmithPro.Advertisement:SendAdvertisement()
             self:RestartTimer()
         end
     else
-        print("|cffff0000LockSmithPro:|r No channels available for advertisement")
+        print("|cffff0000LockSmithPro:|r No advertisement submitted (channel unavailable or client restriction)")
     end
 end
 
@@ -104,7 +80,7 @@ function LockSmithPro.Advertisement:StartAdTimer()
 
     if not LockSmithProDB.adTimerEnabled then return end
 
-    local interval = LockSmithProDB.adTimerInterval or 60
+    local interval = math.max(30, math.min(600, tonumber(LockSmithProDB.adTimerInterval) or 60))
 
     -- Create repeating timer
     adTimer = LockSmithPro.Utils:ScheduleRepeatingTimer(function()

@@ -524,8 +524,11 @@ function LockSmithPro.Dashboard:InitializeJobBoard(content)
     yellAdBtn:SetScript("OnClick", function()
         if LockSmithPro.Advertisement and LockSmithProDB.adMessage then
             local message = LockSmithPro.Advertisement:ProcessAdMessage(LockSmithProDB.adMessage)
-            SendChatMessage(message, "YELL")
-            print("|cff00ff00LockSmithPro:|r Ad sent to Yell")
+            if LockSmithPro.Compat:SendChat(message, "YELL") then
+                print("|cff00ff00LockSmithPro:|r Advertisement submitted to Yell")
+            else
+                print("|cffff0000LockSmithPro:|r Advertisement unavailable or restricted")
+            end
         end
     end)
 
@@ -578,7 +581,7 @@ function LockSmithPro.Dashboard:UpdateJobBoardStatus()
     -- Skill text
     if content.skillText then
         local skill, maxSkill = LockSmithPro.Skills:GetCachedSkill()
-        content.skillText:SetText("Skill: " .. skill .. "/" .. maxSkill)
+        content.skillText:SetText("Skill: " .. LockSmithPro.Skills:GetDisplayText())
     end
 
     -- Start/Stop button
@@ -602,6 +605,13 @@ end
 
 -- Add a job to the board
 function LockSmithPro.Dashboard:AddJob(sender, message, boxData, channelName, requiredSkill)
+    local key = LockSmithPro.Compat:NameKey(sender)
+    if not key then return end
+    for i = #jobList, 1, -1 do
+        if LockSmithPro.Compat:NameKey(jobList[i].sender) == key or GetTime() - jobList[i].timestamp > 1800 then
+            table.remove(jobList, i)
+        end
+    end
     -- Create job data
     local job = {
         sender = sender,
@@ -615,6 +625,7 @@ function LockSmithPro.Dashboard:AddJob(sender, message, boxData, channelName, re
 
     -- Add to list (newest first)
     table.insert(jobList, 1, job)
+    while #jobList > 100 do table.remove(jobList) end
 
     -- Rebuild job list UI
     LockSmithPro.Dashboard:RebuildJobList()
@@ -639,22 +650,9 @@ end
 
 -- Remove all jobs from a specific sender
 function LockSmithPro.Dashboard:RemoveJobsBySender(sender)
-    local normalized = string.lower(sender)
-    -- Normalize to remove realm name if present
-    local dash = string.find(normalized, "-", 1, true)
-    if dash then
-        normalized = string.sub(normalized, 1, dash - 1)
-    end
-
-    -- Remove all jobs from this sender (iterate backwards to safely remove)
+    local normalized = LockSmithPro.Compat:NameKey(sender)
     for i = #jobList, 1, -1 do
-        local jobSender = string.lower(jobList[i].sender)
-        local jobDash = string.find(jobSender, "-", 1, true)
-        if jobDash then
-            jobSender = string.sub(jobSender, 1, jobDash - 1)
-        end
-
-        if jobSender == normalized then
+        if LockSmithPro.Compat:NameKey(jobList[i].sender) == normalized then
             table.remove(jobList, i)
         end
     end
@@ -667,9 +665,9 @@ function LockSmithPro.Dashboard:RebuildJobList()
     -- Clear existing job frames
     for _, frame in ipairs(jobFrames) do
         frame:Hide()
-        frame:SetParent(nil)
+        frame:SetScript("OnUpdate", nil)
+        frame.job = nil
     end
-    jobFrames = {}
 
     if not jobContentFrame then return end
 
@@ -678,6 +676,7 @@ function LockSmithPro.Dashboard:RebuildJobList()
 
     for i, job in ipairs(jobList) do
         local card = LockSmithPro.Dashboard:CreateJobCard(job, i)
+        card:ClearAllPoints()
         card:SetPoint("TOPLEFT", jobContentFrame, "TOPLEFT", 5, yOffset)
         card:SetPoint("TOPRIGHT", jobContentFrame, "TOPRIGHT", -5, yOffset)
 
@@ -686,7 +685,8 @@ function LockSmithPro.Dashboard:RebuildJobList()
             LockSmithPro.Dashboard:AnimateNewJob(card)
         end
 
-        table.insert(jobFrames, card)
+        jobFrames[i] = card
+        card:Show()
         -- Use the card's actual height (which is now dynamic)
         yOffset = yOffset - card:GetHeight() - cardSpacing
     end
@@ -696,23 +696,10 @@ function LockSmithPro.Dashboard:RebuildJobList()
     jobContentFrame:SetHeight(totalHeight)
 end
 
--- Helper to strip realm name from player name
-local function StripRealmName(fullName)
-    if type(fullName) ~= "string" then
-        return fullName
-    end
-
-    local dash = string.find(fullName, "-", 1, true)
-    if dash then
-        return string.sub(fullName, 1, dash - 1)
-    end
-
-    return fullName
-end
-
 -- Create a job card
 function LockSmithPro.Dashboard:CreateJobCard(job, index)
-    local card = CreateFrame("Frame", nil, jobContentFrame, "BackdropTemplate")
+    local card = jobFrames[index] or CreateFrame("Frame", nil, jobContentFrame, "BackdropTemplate")
+    card.job, card.index = job, index
     card:SetBackdrop({
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -723,11 +710,13 @@ function LockSmithPro.Dashboard:CreateJobCard(job, index)
     card:SetBackdropBorderColor(0.5, 0.2, 0.2, 1)
 
     -- Close button (X) in top-right corner
-    local closeBtn = CreateFrame("Button", nil, card)
+    local closeBtn = card.closeBtn or CreateFrame("Button", nil, card)
+    card.closeBtn = closeBtn
     closeBtn:SetSize(20, 20)
     closeBtn:SetPoint("TOPRIGHT", card, "TOPRIGHT", -4, -4)
 
-    local closeBtnText = closeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    local closeBtnText = card.closeBtnText or closeBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    card.closeBtnText = closeBtnText
     closeBtnText:SetPoint("CENTER", closeBtn, "CENTER", 0, 0)
     closeBtnText:SetText("|cffaaaaaa×|r")
 
@@ -738,20 +727,25 @@ function LockSmithPro.Dashboard:CreateJobCard(job, index)
         closeBtnText:SetText("|cffaaaaaa×|r")
     end)
     closeBtn:SetScript("OnClick", function()
-        LockSmithPro.Dashboard:RemoveJob(index)
+        LockSmithPro.Dashboard:RemoveJob(card.index)
     end)
 
     -- Player name (smaller font)
-    local playerName = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local playerName = card.playerName or card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    card.playerName = playerName
     playerName:SetPoint("TOPLEFT", card, "TOPLEFT", 10, -8)
+    playerName:SetWidth(math.max(100, jobContentFrame:GetWidth() - 50))
+    playerName:SetWordWrap(true)
+    playerName:SetJustifyH("LEFT")
     local nameColor = (job.channelName == "WHISPER" and "ff69b4" or "ffcc00")
     local timeLabel = job.registeredAt or date("%H:%M:%S")
-    local displayName = StripRealmName(job.sender)
+    local displayName = job.sender
     playerName:SetText("|cff" .. nameColor .. displayName .. "|r |cff888888[" .. timeLabel .. "]|r")
 
     -- Channel (smaller font)
-    local channel = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    channel:SetPoint("TOPRIGHT", closeBtn, "TOPLEFT", -4, -6)
+    local channel = card.channel or card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    card.channel = channel
+    channel:SetPoint("TOPLEFT", playerName, "BOTTOMLEFT", 0, -2)
     channel:SetText(job.channelName or "Unknown")
 
     -- Get card width from parent to calculate message width and button widths
@@ -759,8 +753,9 @@ function LockSmithPro.Dashboard:CreateJobCard(job, index)
     local msgWidth = cardWidth - 20 -- 10px left margin + 10px right margin
 
     -- Message (smaller font, with word wrapping)
-    local msg = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    msg:SetPoint("TOPLEFT", playerName, "BOTTOMLEFT", 0, -4)
+    local msg = card.msg or card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    card.msg = msg
+    msg:SetPoint("TOPLEFT", channel, "BOTTOMLEFT", 0, -4)
     msg:SetJustifyH("LEFT")
     msg:SetJustifyV("TOP")
     msg:SetWordWrap(true)
@@ -775,7 +770,8 @@ function LockSmithPro.Dashboard:CreateJobCard(job, index)
     local msgHeight = msg:GetStringHeight()
 
     -- Box info (smaller font) - only show if box data exists (item was linked)
-    local boxInfo = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    local boxInfo = card.boxInfo or card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    card.boxInfo = boxInfo
     boxInfo:SetPoint("TOPLEFT", msg, "BOTTOMLEFT", 0, -4)
     local boxInfoHeight = 14 -- Default height for spacing calculation
     if job.boxData then
@@ -788,37 +784,42 @@ function LockSmithPro.Dashboard:CreateJobCard(job, index)
 
     -- Buttons (responsive width - use anchors to distribute evenly)
     -- Each button gets equal width by anchoring both left and right edges
-    local inviteBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
+    local inviteBtn = card.inviteBtn or CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
+    card.inviteBtn = inviteBtn
     inviteBtn:SetHeight(22)
     inviteBtn:SetText("Invite")
     inviteBtn:SetScript("OnClick", function()
         if LockSmithPro.Utils then
-            LockSmithPro.Utils:InvitePlayer(job.sender)
+            if not LockSmithPro.Utils:InvitePlayer(card.job.sender) then
+                print("|cffff0000LockSmithPro:|r Invite unavailable (cooldown, group status, or client restriction)")
+            end
         end
     end)
 
-    local whisperBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
+    local whisperBtn = card.whisperBtn or CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
+    card.whisperBtn = whisperBtn
     whisperBtn:SetHeight(22)
     whisperBtn:SetText("Whisper")
     whisperBtn:SetScript("OnClick", function()
-        ChatFrame_SendTell(job.sender)
+        LockSmithPro.Compat:OpenWhisper(card.job.sender)
     end)
 
-    local ignoreBtn = CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
+    local ignoreBtn = card.ignoreBtn or CreateFrame("Button", nil, card, "GameMenuButtonTemplate")
+    card.ignoreBtn = ignoreBtn
     ignoreBtn:SetHeight(22)
     ignoreBtn:SetText("Ignore")
     ignoreBtn:SetScript("OnClick", function()
         if LockSmithPro.ChatMonitor and LockSmithPro.ChatMonitor.AddToSessionIgnore then
-            LockSmithPro.ChatMonitor:AddToSessionIgnore(job.sender)
+            LockSmithPro.ChatMonitor:AddToSessionIgnore(card.job.sender)
         end
         -- Remove ALL jobs from this sender, not just this one
-        LockSmithPro.Dashboard:RemoveJobsBySender(job.sender)
+        LockSmithPro.Dashboard:RemoveJobsBySender(card.job.sender)
     end)
 
     -- Calculate total card height dynamically
     -- Top padding (8) + playerName height (~14) + spacing (4) + message height + spacing (4) + boxInfo height (0 or ~14) + spacing (6 or 0) + button height (22) + bottom padding (6)
     local boxInfoSpacing = boxInfoHeight > 0 and 6 or 0 -- Only add spacing if box info is shown
-    local totalHeight = 8 + 14 + 4 + msgHeight + 4 + boxInfoHeight + boxInfoSpacing + 22 + 6
+    local totalHeight = 8 + playerName:GetStringHeight() + 16 + 4 + msgHeight + 4 + boxInfoHeight + boxInfoSpacing + 22 + 6
     card:SetHeight(math.max(95, totalHeight)) -- Minimum 95 to match original
 
     -- Calculate button widths: (cardWidth - left margin - right margin - 2 gaps) / 3
@@ -845,8 +846,7 @@ end
 function LockSmithPro.Dashboard:AnimateNewJob(card)
     -- Flash border
     local flashCount = 0
-    local flashFrame = CreateFrame("Frame")
-    flashFrame:SetScript("OnUpdate", function(self, elapsed)
+    card:SetScript("OnUpdate", function(self, elapsed)
         flashCount = flashCount + elapsed * 4 -- 4 flashes per second
 
         if flashCount < 4 then -- Flash for 1 second
@@ -1527,6 +1527,7 @@ function LockSmithPro.Dashboard:InitializeSettings(content)
     -- Auto-Response Settings
     CreateHeader("Auto-Response")
     CreateCheckbox("Auto-invite on Whisper", "autoInviteWhisper")
+    CreateCheckbox("Auto-invite matching requests (when permitted by the client)", "autoInviteOnMatch")
     CreateCheckbox("Show Popup on Any Whisper", "popupOnAnyWhisper")
     CreateCheckbox("Low Skill Whisper", "lowSkillWhisper")
     yOffset = yOffset - 5

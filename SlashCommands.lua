@@ -24,7 +24,7 @@ SlashCmdList["LockSmithPro"] = function(msg)
 
     elseif cmd == "skill" then
         local skill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
-        print("|cff00ff00LockSmithPro:|r Lockpicking skill: " .. skill .. "/" .. maxSkill)
+        print("|cff00ff00LockSmithPro:|r Lockpicking skill: " .. LockSmithPro.Skills:GetDisplayText())
 
     elseif cmd == "stats" then
         print("|cff00ff00LockSmithPro Statistics:|r")

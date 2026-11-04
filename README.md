@@ -1,21 +1,36 @@
 # LockSmithPro - Professional Lockpicking Service Addon
 
 ![Available on CurseForge](https://img.shields.io/badge/Available_on-CurseForge-6441A4?style=flat&logo=curseforge)
-![Version](https://img.shields.io/badge/Version-1.0.1-brightgreen)
-![WoW Compatibility](https://img.shields.io/badge/WoW-Classic%20Era%20|%20TBC%20|%20Wrath%20|%20Retail-blue)
+![Version](https://img.shields.io/badge/Version-1.1.0-brightgreen)
+![WoW Compatibility](https://img.shields.io/badge/WoW-Classic%20Era%20|%20TBC%20Anniversary%20|%20MoP%20|%20Retail%20|%20Forever-blue)
 
-**The ultimate lockpicking business automation addon for World of Warcraft!** Transform your Rogue into a professional locksmith with automatic chat monitoring, smart notifications, comprehensive earnings tracking, and powerful automation tools. Built for maximum efficiency and ease of use across all WoW versions.
+**The ultimate lockpicking business automation addon for World of Warcraft!** Transform your Rogue into a professional locksmith with automatic chat monitoring, smart notifications, comprehensive earnings tracking, and powerful automation tools. Targets current Retail, Classic Era, TBC Anniversary, MoP Classic, and WoW Forever clients.
 
 Available for download at [CurseForge](https://www.curseforge.com/wow/addons/locksmithpro).
 
 ![LockSmithPro Dashboard](https://via.placeholder.com/800x450.png?text=LockSmithPro+Dashboard+Screenshot)
+
+
+## Version 1.1.0 compatibility update
+
+This build targets Retail 12.1.5 (`120105`), Classic Era 1.15.9 (`11509`), TBC Anniversary 2.5.6 (`20506`), MoP Classic 5.5.4 (`50504`), and Forever 1.60.1 (`16001`). It includes separate Mainline, Vanilla, TBC, Mists, and Camelot manifests. Client metadata and API references are recorded in [.build/COMPATIBILITY.md](.build/COMPATIBILITY.md).
+
+Enable **Auto-invite matching requests** under Settings → Auto-Response to invite players whose messages match your include phrases. It is off by default. Exclusions, enabled channels, ignores, recent trades, known skill requirements, group permissions and invitation cooldowns still apply. The existing **Auto-invite on Whisper** option also permits non-matching whispers; turn that off if you want phrase matching only. Requests remain on the board when an invite cannot be dispatched.
+
+Forever first names and surnames remain together throughout invites, whispers, trades, and customer records. Realm-qualified names remain distinct on other clients. Communication stops when the client reports restrictions; the addon never retries blocked messages in a background queue. Advertisements still require a click or slash command.
+
+The job board keeps the newest request per customer, up to 100 jobs, and drops jobs older than 30 minutes when new ones arrive. Cards, buttons, text regions and animations are reused. Timers use cancellable native tickers, and transient caches have fixed limits.
+
+**Validation:** Lua 5.1 regression simulations pass for all five profiles, including memory/frame plateau checks. This is not an in-game certification; live taint restrictions, rendering and actual delivery still require the smoke tests in [.build/COMPATIBILITY.md](.build/COMPATIBILITY.md). The reported world desync has not been reproduced.
+
+Run `sh tests/run.sh` with Lua 5.1 installed (or set `LUA=/path/to/lua`). Build an installable ZIP with `python3 .build/package.py`; extract its `LockSmithPro` folder into the selected client's `Interface/AddOns` folder. Existing `LockSmithProDB` settings and statistics are retained.
 
 ## 🎲 Core Features
 
 ### **🔍 Intelligent Chat Monitoring**
 - **Multi-channel detection** - Automatically monitors Trade, General, LFG, and Whisper channels
 - **Language-independent box detection** - Recognizes lockbox requests regardless of phrasing
-- **Smart skill checking** - Only notifies you of requests you can actually fulfill
+- **Smart skill checking** - Checks exposed skill values; shows unknown when the client provides no rank
 - **Include/exclude keyword filters** - Customize what triggers notifications
 - **Session ignore list** - Temporarily ignore spammy players (resets when addon stops)
 - **Recent trade partner tracking** - Prevents duplicate notifications from the same customer
@@ -337,7 +352,7 @@ LockSmithPro now uses **CurseForge automatic packaging** via Git tags.
 2. Push a release tag:
 ```powershell
 # Release
-.\.build\push-release-tag.ps1 -Version "1.0.1" -Channel release
+.\.build\push-release-tag.ps1 -Version "1.1.0" -Channel release
 
 # Beta
 .\.build\push-release-tag.ps1 -Version "1.1.0" -Channel beta -Iteration 1
@@ -367,7 +382,7 @@ LockSmithPro/
 
 ## 📖 Version History
 
-**Current Version:** 1.0.1
+**Current Version:** 1.1.0
 
 ### Recent Updates
 - Initial release with full feature set

@@ -81,7 +81,7 @@ end
 
 local function GetTradeTargetBoxData(slot)
     local itemLink = GetTradeTargetItemLink(slot)
-    if not itemLink then
+    if not LockSmithPro.Compat:IsString(itemLink) then
         return nil, nil
     end
 
@@ -91,7 +91,7 @@ local function GetTradeTargetBoxData(slot)
 end
 
 local function TrimString(value)
-    if type(value) ~= "string" then
+    if not LockSmithPro.Compat:IsString(value) then
         return ""
     end
 
@@ -115,71 +115,15 @@ local function SanitizePartnerName(name)
     return cleaned
 end
 
-local function GetUnitNameWithRealm(unitID)
-    if type(UnitName) ~= "function" then
-        return nil
-    end
-
-    if type(UnitExists) == "function" and not UnitExists(unitID) then
-        return nil
-    end
-
-    local name, realm = UnitName(unitID)
-    name = SanitizePartnerName(name)
-    if not name then
-        return nil
-    end
-
-    realm = TrimString(realm)
-    if realm ~= "" and not string.find(name, "-", 1, true) then
-        return name .. "-" .. realm
-    end
-
-    return name
-end
-
 local function GetTradePartnerName(fallbackName)
-    local partnerFromFrame = TradeFrameRecipientNameText and TradeFrameRecipientNameText:GetText() or nil
-    local partner = SanitizePartnerName(partnerFromFrame)
-    if partner then
-        return partner
-    end
-
-    partner = GetUnitNameWithRealm("target")
-    if partner then
-        return partner
-    end
-
-    partner = SanitizePartnerName(fallbackName)
-    if partner then
-        return partner
-    end
-
-    return "Unknown"
+    -- NPC is the actual trade partner. The selected target may be unrelated;
+    -- visible recipient labels may omit realms or Forever's second name.
+    return SanitizePartnerName(fallbackName)
+        or SanitizePartnerName(LockSmithPro.Compat:UnitAddress("NPC"))
 end
-
-local function NormalizePartnerName(name)
-    local sanitized = SanitizePartnerName(name)
-    if not sanitized then
-        return ""
-    end
-    return string.lower(sanitized)
-end
-
 local function ShouldCountJob(partner)
-    local key = NormalizePartnerName(partner)
-    if key == "" then
-        return true
-    end
-
-    local now = GetTime()
-    local last = lastJobTimeByPartner[key]
-    if not last or (now - last) > JOB_WINDOW_SECONDS then
-        lastJobTimeByPartner[key] = now
-        return true
-    end
-
-    return false
+    local key = LockSmithPro.Compat:NameKey(partner)
+    return not key or LockSmithPro.Compat:Remember(lastJobTimeByPartner, key, JOB_WINDOW_SECONDS)
 end
 
 local function EnsureBoxStats()
@@ -201,11 +145,11 @@ local function CountTradeBoxes()
     -- Slot 7 ("Will Not Be Traded") is tracked separately via Pick Lock spell casts
     for slot = 1, 6 do
         local itemLink = GetTradeTargetItemLink(slot)
-        if itemLink then
+        if LockSmithPro.Compat:IsString(itemLink) then
             local itemName, _, itemCount = GetTradeTargetItemInfo(slot)
             local boxData = LockSmithPro.GetBoxDataFromItemLink and LockSmithPro:GetBoxDataFromItemLink(itemLink, itemName)
             if boxData then
-                local count = itemCount or 1
+                local count = LockSmithPro.Compat:IsNumber(itemCount) and itemCount or 1
                 total = total + count
                 local key = boxData.key or boxData.name
                 counts[key] = (counts[key] or 0) + count
@@ -222,6 +166,9 @@ end
 
 -- Initialize session
 function LockSmithPro.Statistics:InitSession()
+    tradeStateToken = tradeStateToken + 1
+    ResetTradeTrackingState()
+    lastJobTimeByPartner = {}
     sessionStartTime = GetTime()
     sessionGold = 0
     sessionJobs = 0
@@ -350,12 +297,13 @@ tradeFrame:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 tradeFrame:RegisterEvent("UI_INFO_MESSAGE")  -- Used to detect successful trade completion
 
 tradeFrame:SetScript("OnEvent", function(self, event, ...)
+    if not LockSmithPro:IsRunning() then return end
     if event == "TRADE_SHOW" then
         -- Reset trade data when trade window opens
         -- Try multiple methods to get partner name (handles no target case)
         tradeStateToken = tradeStateToken + 1
 
-        pendingTradePartner = GetTradePartnerName(pendingTradePartner)
+        pendingTradePartner = GetTradePartnerName(nil)
         pendingTradeGold = 0
         pendingTradeBoxes = 0
         pendingTradeBoxCounts = nil
@@ -370,7 +318,7 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
     elseif event == "TRADE_TARGET_ITEM_CHANGED" then
         -- Fires when customer changes items in trade window (including slot 7 "Will Not Be Traded")
         local slotIndex = ...
-        if slotIndex == 7 then
+        if LockSmithPro.Compat:IsNumber(slotIndex) and slotIndex == 7 then
             -- Customer put/removed item in "Will Not Be Traded" slot
             local boxData, itemLink = GetTradeTargetBoxData(7)
             currentSlot7BoxKey = boxData and boxData.key or nil
@@ -386,6 +334,7 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
 
         local unitTarget, castGUID, spellID = ...
 
+        if not LockSmithPro.Compat:IsString(unitTarget) or not LockSmithPro.Compat:IsNumber(spellID) then return end
         if unitTarget == "player" and IsPickLockSpell(spellID) then
             local boxKey = currentSlot7BoxKey
             if not boxKey then
@@ -415,18 +364,21 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
         -- Capture trade data on every accept update (handles tip changes, re-accepts, etc.)
         -- We DON'T process the trade here - we wait for UI_INFO_MESSAGE with ERR_TRADE_COMPLETE
         if not tradeCompleted then
-            pendingTradeGold = GetTargetTradeMoney() or 0
+            local money = GetTargetTradeMoney()
+            pendingTradeGold = LockSmithPro.Compat:IsNumber(money) and money or 0
             pendingTradeBoxes, pendingTradeBoxCounts = CountTradeBoxes()
-            LockSmithPro:DebugPrint("Trade data captured - Gold: " .. pendingTradeGold .. ", Boxes: " .. (pendingTradeBoxes or 0) .. " (Player: " .. playerAccepted .. ", Target: " .. targetAccepted .. ")")
+            LockSmithPro:DebugPrint("Trade data captured - Gold: " .. pendingTradeGold .. ", Boxes: " .. (pendingTradeBoxes or 0))
         end
 
     elseif event == "UI_INFO_MESSAGE" then
         -- This is the authoritative "trade completed" event
         -- ERR_TRADE_COMPLETE fires AFTER all spell casts and trade actions are done on the server
         local arg1, arg2 = ...
-        local message = arg2 or arg1
+        local message = arg2
+        if not LockSmithPro.Compat:IsReadable(message) then return end
+        if message == nil then message = arg1 end
 
-        if message == ERR_TRADE_COMPLETE and not tradeCompleted then
+        if LockSmithPro.Compat:IsString(message) and message == ERR_TRADE_COMPLETE and not tradeCompleted then
             tradeCompleted = true
 
             -- Use the data we captured during TRADE_ACCEPT_UPDATE
@@ -479,12 +431,13 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
                 -- Send thank-you message after 2 second delay
                 if goldReceived > 0 and LockSmithPro.AutoResponse and LockSmithProDB.thankYouWhisper and partnerForActions then
                     local gold = goldReceived
+                    local generation = LockSmithPro:GetSessionGeneration()
                     if C_Timer and C_Timer.After then
                         C_Timer.After(2, function()
-                            LockSmithPro.AutoResponse:SendThankYouWhisper(partnerForActions, gold)
+                            if LockSmithPro:IsRunning() and generation == LockSmithPro:GetSessionGeneration() then LockSmithPro.AutoResponse:SendThankYouWhisper(partnerForActions, gold) end
                         end)
                     else
-                        LockSmithPro.AutoResponse:SendThankYouWhisper(partnerForActions, gold)
+                        if LockSmithPro:IsRunning() and generation == LockSmithPro:GetSessionGeneration() then LockSmithPro.AutoResponse:SendThankYouWhisper(partnerForActions, gold) end
                     end
                 end
             else
@@ -514,38 +467,6 @@ tradeFrame:SetScript("OnEvent", function(self, event, ...)
             end)
         else
             ResetTradeTrackingState()
-        end
-    end
-end)
-
--- ================================
--- Mail Tracking
--- ================================
-
-local mailFrame = CreateFrame("Frame")
-mailFrame:RegisterEvent("MAIL_SHOW")
-mailFrame:RegisterEvent("MAIL_INBOX_UPDATE")
-
-local lastMailCheck = {}
-
-mailFrame:SetScript("OnEvent", function(self, event)
-    if not LockSmithPro:IsRunning() then return end
-
-    if event == "MAIL_INBOX_UPDATE" then
-        local numItems = GetInboxNumItems()
-
-        for i = 1, numItems do
-            local packageIcon, stationeryIcon, sender, subject, money, CODAmount, daysLeft, hasItem, wasRead = GetInboxHeaderInfo(i)
-
-            -- Only track new mail with gold
-            if money and money > 0 and not wasRead then
-                local mailKey = sender .. "_" .. i .. "_" .. money
-                if not lastMailCheck[mailKey] then
-                    lastMailCheck[mailKey] = true
-                    -- Note: We can't automatically attribute mail gold to lockpicking
-                    -- User would need to manually verify
-                end
-            end
         end
     end
 end)

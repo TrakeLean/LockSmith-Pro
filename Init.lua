@@ -4,11 +4,13 @@
 LockSmithPro = LockSmithPro or {}
 
 -- Addon metadata
-local addonName = "LockSmithPro"
-local addonVersion = "1.0.1"
+local addonName = ... or "LockSmithPro"
+local addonVersion = "1.1.0"
 
 -- Runtime state
 local isRunning = false
+local sessionGeneration = 0
+function LockSmithPro:GetSessionGeneration() return sessionGeneration end
 
 -- Default settings
 local defaultSettings = {
@@ -37,6 +39,7 @@ local defaultSettings = {
     thankYouWhisper = true,
     thankYouMessage = "Thank you for the %TIP% tip! <3",
     autoInviteWhisper = false,
+    autoInviteOnMatch = false,
     popupOnAnyWhisper = false,
 
     -- Sound settings
@@ -70,13 +73,13 @@ LockSmithPro.DefaultSettings = defaultSettings
 
 -- Initialize saved variables
 local function InitializeSavedVariables()
-    if not LockSmithProDB then
+    if type(LockSmithProDB) ~= "table" then
         LockSmithProDB = {}
     end
 
     -- Merge defaults with saved settings
     for key, value in pairs(defaultSettings) do
-        if LockSmithProDB[key] == nil then
+        if type(LockSmithProDB[key]) ~= type(value) then
             if type(value) == "table" then
                 LockSmithProDB[key] = {}
                 for k, v in pairs(value) do
@@ -183,6 +186,7 @@ function LockSmithPro:Start()
         return
     end
 
+    sessionGeneration = sessionGeneration + 1
     isRunning = true
     LockSmithProDB.enabled = true
     LockSmithPro.Statistics:InitSession()
@@ -191,7 +195,7 @@ function LockSmithPro:Start()
     LockSmithPro.Skills:GetLockpickingSkill()
     local skill, maxSkill = LockSmithPro.Skills:GetCachedSkill()
 
-    print("|cff00ff00LockSmithPro:|r Started! Lockpicking skill: " .. skill .. "/" .. maxSkill)
+    print("|cff00ff00LockSmithPro:|r Started! Lockpicking skill: " .. LockSmithPro.Skills:GetDisplayText())
 
     -- Start ad timer if enabled
     if LockSmithProDB.adTimerEnabled then
@@ -211,6 +215,7 @@ function LockSmithPro:Stop()
         return
     end
 
+    sessionGeneration = sessionGeneration + 1
     isRunning = false
     LockSmithProDB.enabled = false
 
@@ -253,6 +258,7 @@ end
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
+eventFrame:RegisterEvent("PLAYER_LOGOUT")
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
@@ -262,6 +268,8 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
             print("|cff00ff00LockSmithPro|r v" .. addonVersion .. " loaded! Type /LockSmithPro for options")
         end
 
+    elseif event == "PLAYER_LOGOUT" then
+        if isRunning then LockSmithPro.Statistics:SaveSessionStats() end
     elseif event == "PLAYER_LOGIN" then
         -- Register Blizzard Settings/AddOns panel so it appears in the AddOns list
         if LockSmithPro.UI and LockSmithPro.UI.EnsureSettingsPanelRegistered then

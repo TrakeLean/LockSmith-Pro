@@ -113,7 +113,7 @@ local function CreateSettingsPanel()
     -- Version
     local version = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     version:SetPoint("TOPLEFT", 16, yOffset)
-    version:SetText("Version 1.0.0")
+    version:SetText("Version 1.1.0")
     yOffset = yOffset - 30
 
     -- ================================
@@ -139,7 +139,7 @@ local function CreateSettingsPanel()
         if statusText then
             if LockSmithPro:IsRunning() then
                 local skill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
-                statusText:SetText("|cff00ff00Status: Running|r (Skill: " .. skill .. "/" .. maxSkill .. ")")
+                statusText:SetText("|cff00ff00Status: Running|r (Skill: " .. LockSmithPro.Skills:GetDisplayText() .. ")")
             else
                 statusText:SetText("|cffff0000Status: Stopped|r")
             end
@@ -152,7 +152,7 @@ local function CreateSettingsPanel()
     statusText:SetPoint("TOPLEFT", 16, yOffset)
     if LockSmithPro:IsRunning() then
         local skill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
-        statusText:SetText("|cff00ff00Status: Running|r (Skill: " .. skill .. "/" .. maxSkill .. ")")
+        statusText:SetText("|cff00ff00Status: Running|r (Skill: " .. LockSmithPro.Skills:GetDisplayText() .. ")")
     else
         statusText:SetText("|cffff0000Status: Stopped|r")
     end
@@ -408,6 +408,13 @@ local function CreateSettingsPanel()
     yOffset = yOffset - 20
 
     -- Auto-invite on whisper
+    local matchInviteCheck = CreateFrame("CheckButton", "LockSmithProMatchInviteCheck", scrollChild, "ChatConfigCheckButtonTemplate")
+    matchInviteCheck:SetPoint("TOPLEFT", 16, yOffset)
+    _G[matchInviteCheck:GetName() .. "Text"]:SetText("Auto-invite matching requests (when permitted by the client)")
+    matchInviteCheck:SetChecked(LockSmithProDB.autoInviteOnMatch)
+    matchInviteCheck:SetScript("OnClick", function(self) LockSmithProDB.autoInviteOnMatch = self:GetChecked() end)
+    yOffset = yOffset - 25
+
     local autoInviteCheck = CreateFrame("CheckButton", "LockSmithProAutoInviteCheck", scrollChild, "ChatConfigCheckButtonTemplate")
     autoInviteCheck:SetPoint("TOPLEFT", 16, yOffset)
     _G[autoInviteCheck:GetName() .. "Text"]:SetText("Auto-invite whisper senders")
@@ -643,6 +650,7 @@ local function CreateSettingsPanel()
         InterfaceOptions_AddCategory(panel)
     end
 
+    scrollChild:SetHeight(math.abs(yOffset) + 70)
     RefreshMessageFields()
 
     return panel
@@ -660,7 +668,7 @@ function LockSmithPro.UI:OpenSettingsGUI()
 
     -- Open interface options to our panel (call twice due to Blizzard bug on legacy UI)
     if Settings and Settings.OpenToCategory and settingsCategory then
-        Settings.OpenToCategory(settingsCategory)
+        Settings.OpenToCategory(settingsCategory:GetID())
     elseif InterfaceOptionsFrame_OpenToCategory and settingsPanel then
         -- Call twice - Blizzard bug requires this to actually open to the addon
         InterfaceOptionsFrame_OpenToCategory(settingsPanel)

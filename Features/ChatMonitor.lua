@@ -5,75 +5,22 @@ LockSmithPro = LockSmithPro or {}
 LockSmithPro.ChatMonitor = {}
 
 local sessionIgnoreList = {}
-local lastInviteTime = {}
+local pendingInvites = {}
+local ignoreCount, declineCount = 0, 0
 local declinedInvites = {}  -- Track people who declined invites this session
-local INVITE_THROTTLE = 30
 local recentTradePartners = {}  -- Cache of last 5 people we traded with
 local MAX_RECENT_TRADES = 5
 
+local seenRequests = {}
 local function NormalizeSenderName(name)
-    if type(name) ~= "string" then
-        return ""
-    end
-
-    local base = name
-    local dash = string.find(base, "-", 1, true)
-    if dash then
-        base = string.sub(base, 1, dash - 1)
-    end
-
-    return string.lower(base)
+    return LockSmithPro.Compat:NameKey(name) or ""
 end
-
 local function CanInvite(sender)
     local normalized = NormalizeSenderName(sender)
-    if normalized == "" then
-        return false
-    end
-
-    -- Don't re-invite if they declined this session
-    if declinedInvites[normalized] then
-        return false
-    end
-
-    local now = GetTime()
-    local last = lastInviteTime[normalized]
-    if not last or (now - last) > INVITE_THROTTLE then
-        lastInviteTime[normalized] = now
-        return true
-    end
-    return false
+    return normalized ~= "" and not declinedInvites[normalized]
 end
-
 local function IsGroupMember(name)
-    local target = NormalizeSenderName(name)
-    if target == "" then
-        return false
-    end
-
-    -- Check if player is in a raid
-    local inRaid = UnitInRaid("player")
-    if inRaid then
-        -- Use GetNumGroupMembers for newer clients, GetNumRaidMembers for classic
-        local count = GetNumGroupMembers and GetNumGroupMembers() or (GetNumRaidMembers and GetNumRaidMembers() or 0)
-        for i = 1, count do
-            local member = UnitName("raid" .. i)
-            if member and NormalizeSenderName(member) == target then
-                return true
-            end
-        end
-    else
-        -- Use GetNumSubgroupMembers for newer clients, GetNumPartyMembers for classic
-        local count = GetNumSubgroupMembers and GetNumSubgroupMembers() or (GetNumPartyMembers and GetNumPartyMembers() or 0)
-        for i = 1, count do
-            local member = UnitName("party" .. i)
-            if member and NormalizeSenderName(member) == target then
-                return true
-            end
-        end
-    end
-
-    return false
+    return LockSmithPro.Compat:IsGroupMember(name)
 end
 
 -- Add a player to the recent trade partners cache
@@ -111,7 +58,7 @@ local function WasRecentTradePartner(name)
 end
 
 function LockSmithPro.ChatMonitor:IsSelfSender(sender)
-    local playerName = UnitName("player")
+    local playerName = LockSmithPro.Compat:UnitAddress("player")
     if not playerName then
         return false
     end
@@ -124,7 +71,8 @@ end
 -- Session ignore list management
 function LockSmithPro.ChatMonitor:AddToSessionIgnore(sender)
     local normalized = NormalizeSenderName(sender)
-    if normalized ~= "" then
+    if normalized ~= "" and not sessionIgnoreList[normalized] and ignoreCount < 2048 then
+        ignoreCount = ignoreCount + 1
         sessionIgnoreList[normalized] = true
         print("|cff00ff00LockSmithPro:|r Ignoring " .. sender .. " for this session")
     end
@@ -132,7 +80,11 @@ end
 
 function LockSmithPro.ChatMonitor:ClearSessionIgnore()
     sessionIgnoreList = {}
+    ignoreCount, declineCount = 0, 0
     declinedInvites = {}
+    seenRequests = {}
+    recentTradePartners = {}
+    pendingInvites = {}
 end
 
 function LockSmithPro.ChatMonitor:IsSessionIgnored(sender)
@@ -148,6 +100,10 @@ end
 -- Process lockpick request from chat
 function LockSmithPro.ChatMonitor:ProcessLockpickRequest(message, sender, channelName, channelNumber, allowNonKeyword)
     if not LockSmithPro:IsRunning() then return end
+
+    if not LockSmithPro.Compat:IsString(message) or NormalizeSenderName(sender) == "" then return end
+
+    if not LockSmithPro.Compat:IsString(channelName) then channelName = nil end
 
     -- Don't process our own messages
     if self:IsSelfSender(sender) then return end
@@ -181,6 +137,7 @@ function LockSmithPro.ChatMonitor:ProcessLockpickRequest(message, sender, channe
         end
     end
 
+    local phraseMatched = false
     -- Check include keywords (message must contain at least one)
     -- If includeKeywords is empty and allowNonKeyword is false, reject the message
     if LockSmithProDB.includeKeywords and LockSmithProDB.includeKeywords ~= "" then
@@ -201,7 +158,8 @@ function LockSmithPro.ChatMonitor:ProcessLockpickRequest(message, sender, channe
                 end
             end
 
-            if not foundInclude then
+            phraseMatched = foundInclude
+            if not foundInclude and not allowNonKeyword then
                 return -- Message doesn't contain any required include keywords
             end
         end
@@ -210,11 +168,14 @@ function LockSmithPro.ChatMonitor:ProcessLockpickRequest(message, sender, channe
         return
     end
 
+    if not phraseMatched and not allowNonKeyword then return end
+    if not LockSmithPro.Compat:Remember(seenRequests, NormalizeSenderName(sender), 10) then return end
+
     -- Try to identify the box type
     local boxData = LockSmithPro:IdentifyBoxType(message)
 
     -- Get current skill
-    local currentSkill, maxSkill = LockSmithPro.Skills:GetLockpickingSkill()
+    local currentSkill, maxSkill, skillKnown = LockSmithPro.Skills:GetCachedSkill()
 
     -- Determine if we can handle this request
     local canHandle = true
@@ -222,13 +183,17 @@ function LockSmithPro.ChatMonitor:ProcessLockpickRequest(message, sender, channe
 
     if boxData then
         requiredSkill = boxData.skill
-        canHandle = currentSkill >= requiredSkill
+        canHandle = not skillKnown or currentSkill >= requiredSkill
     end
 
     if not canHandle then
         -- Send low skill whisper if enabled
         LockSmithPro.AutoResponse:HandleInsufficientSkill(sender, boxData)
     else
+        if CanInvite(sender) and ((phraseMatched and LockSmithProDB.autoInviteOnMatch)
+            or (channelName == "WHISPER" and LockSmithProDB.autoInviteWhisper)) then
+            LockSmithPro.Utils:InvitePlayer(sender, true)
+        end
         -- Add to dashboard job board
         if LockSmithPro.Dashboard then
             LockSmithPro.Dashboard:AddJob(sender, message, boxData, channelName, requiredSkill)
@@ -243,25 +208,15 @@ end
 local function OnChatMessage(event, ...)
     if not LockSmithPro:IsRunning() then return end
 
-    local message, sender, channelNumber, channelName
-
+    local message, sender = ...
+    if not LockSmithPro.Compat:IsString(message) or not LockSmithPro.Compat:IsString(sender) then return end
     if event == "CHAT_MSG_CHANNEL" then
-        message, sender, _, _, _, _, _, channelNumber, channelName = ...
-        if type(message) ~= "string" then return end
-
-        -- Check if we're monitoring this channel
-        if channelName then
-            local lowerChannel = string.lower(channelName)
-            if string.find(lowerChannel, "trade") and not LockSmithProDB.monitorTrade then
-                return
-            end
-            if string.find(lowerChannel, "general") and not LockSmithProDB.monitorGeneral then
-                return
-            end
-            if string.find(lowerChannel, "lookingforgroup") and not LockSmithProDB.monitorLFG then
-                return
-            end
-        end
+        local channelID, channelNumber, channelName = select(7, ...)
+        if not LockSmithPro.Compat:IsNumber(channelID) then return end
+        local enabled = (channelID == 1 and LockSmithProDB.monitorGeneral)
+            or (channelID == 2 and LockSmithProDB.monitorTrade)
+            or (channelID == 26 and LockSmithProDB.monitorLFG)
+        if not enabled then return end
 
         LockSmithPro.ChatMonitor:ProcessLockpickRequest(message, sender, channelName, channelNumber, false)
 
@@ -273,16 +228,8 @@ local function OnChatMessage(event, ...)
         -- Skip if they were a recent trade partner (they're just saying "ty")
         if WasRecentTradePartner(sender) then return end
 
-        -- Auto-invite if enabled (and skip popup since we're auto-inviting)
-        if LockSmithProDB.autoInviteWhisper and CanInvite(sender) and not IsGroupMember(sender) then
-            if LockSmithPro.Utils and LockSmithPro.Utils.InvitePlayer then
-                LockSmithPro.Utils:InvitePlayer(sender)
-            end
-            return  -- Skip popup when auto-inviting
-        end
-
-        local allowNonKeyword = LockSmithProDB.popupOnAnyWhisper
-        if not LockSmithProDB.monitorWhisper and not allowNonKeyword then return end
+        if not LockSmithProDB.monitorWhisper then return end
+        local allowNonKeyword = LockSmithProDB.popupOnAnyWhisper or LockSmithProDB.autoInviteWhisper
 
         LockSmithPro.ChatMonitor:ProcessLockpickRequest(message, sender, "WHISPER", nil, allowNonKeyword)
 
@@ -300,18 +247,20 @@ local function OnChatMessage(event, ...)
 end
 
 -- Track when we send an invite
-local pendingInvites = {}  -- Map of normalized names to timestamp when we invited them
+-- Pending invites are bounded and cleared with the session.
 
 function LockSmithPro.ChatMonitor:OnInviteSent(playerName)
     local normalized = NormalizeSenderName(playerName)
     if normalized ~= "" then
-        pendingInvites[normalized] = GetTime()
+        LockSmithPro.Compat:Remember(pendingInvites, normalized, 60)
     end
 end
 
 -- Register chat events
+local eventFrame
 function LockSmithPro.ChatMonitor:RegisterEvents()
-    local eventFrame = CreateFrame("Frame", "LockSmithProChatMonitorFrame")
+    if eventFrame then return end
+    eventFrame = CreateFrame("Frame", "LockSmithProChatMonitorFrame")
     eventFrame:RegisterEvent("CHAT_MSG_CHANNEL")
     eventFrame:RegisterEvent("CHAT_MSG_WHISPER")
     eventFrame:RegisterEvent("CHAT_MSG_SAY")
@@ -334,7 +283,10 @@ function LockSmithPro.ChatMonitor:RegisterEvents()
                     end
                 elseif GetTime() - inviteTime > 60 then
                     -- After 60 seconds, assume they declined or ignored it
-                    declinedInvites[normalized] = true
+                    if declineCount < 2048 and not declinedInvites[normalized] then
+                        declinedInvites[normalized] = true
+                        declineCount = declineCount + 1
+                    end
                     pendingInvites[normalized] = nil
                 end
             end
