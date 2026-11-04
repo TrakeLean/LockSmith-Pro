@@ -1,0 +1,12 @@
+package-as: LockSmithPro
+manual-changelog: CHANGELOG.md
+markup-type: markdown
+
+ignore:
+  - .build
+  - versions
+  - README.md
+  - Curseforge_Description.mkd
+  - tests
+  - dist
+  - .github

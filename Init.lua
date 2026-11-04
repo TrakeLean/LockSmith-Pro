@@ -1,14 +1,16 @@
 -- Init.lua
 -- Initialization and addon lifecycle management
 
-LockSmith = LockSmith or {}
+LockSmithPro = LockSmithPro or {}
 
 -- Addon metadata
-local addonName = "LockSmith"
-local addonVersion = "1.0.0"
+local addonName = ... or "LockSmithPro"
+local addonVersion = "1.1.0"
 
 -- Runtime state
 local isRunning = false
+local sessionGeneration = 0
+function LockSmithPro:GetSessionGeneration() return sessionGeneration end
 
 -- Default settings
 local defaultSettings = {
@@ -17,10 +19,11 @@ local defaultSettings = {
     monitorTrade = true,
     monitorGeneral = true,
     monitorLFG = true,
+    monitorSay = true,
     monitorWhisper = true,
 
     -- Advertisement settings
-    adMessage = "Locksmith, Let me open your Junkbox tips appreciated!",
+    adMessage = "%SPELL_LINK% service available! Let me open your Junkboxes - tips appreciated!",
     adChannels = {
         trade = true,
         general = true,
@@ -34,13 +37,29 @@ local defaultSettings = {
     lowSkillWhisper = true,
     lowSkillMessage = "Sorry, my lockpicking skill (%CURRENT%) is too low for that box (requires %REQUIRED%)",
     thankYouWhisper = true,
-    thankYouMessage = "Thank you for the %TIP% tip! ♥",
+    thankYouMessage = "Thank you for the %TIP% tip! <3",
+    autoInviteWhisper = false,
+    autoInviteOnMatch = false,
+    popupOnAnyWhisper = false,
+
+    -- Sound settings
+    playSoundEffects = true,
+    debugChat = false,
+
+    -- Raid marker settings
+    autoMarkSelf = true,
+    autoMarkCustomers = true,
+
+    -- Job board filters
+    includeKeywords = "lockpick, lock pick, lockbox, unlock, rogue, rouge", -- Comma-separated keywords that MUST be in message
+    excludeKeywords = "wts, lfg, premade, wsg, ab, av", -- Comma-separated keywords that must NOT be in message
 
     -- Statistics
     stats = {
         totalGold = 0,
         totalJobs = 0,
         lastSessionGold = 0,
+        bestSessionGold = 0,
         totalBoxes = 0,
         boxesOpened = {},
     },
@@ -50,82 +69,109 @@ local defaultSettings = {
     minimapButtonHidden = false,
 }
 
-LockSmith.DefaultSettings = defaultSettings
+LockSmithPro.DefaultSettings = defaultSettings
 
 -- Initialize saved variables
 local function InitializeSavedVariables()
-    if not LockSmithDB then
-        LockSmithDB = {}
+    if type(LockSmithProDB) ~= "table" then
+        LockSmithProDB = {}
     end
 
     -- Merge defaults with saved settings
     for key, value in pairs(defaultSettings) do
-        if LockSmithDB[key] == nil then
+        if type(LockSmithProDB[key]) ~= type(value) then
             if type(value) == "table" then
-                LockSmithDB[key] = {}
+                LockSmithProDB[key] = {}
                 for k, v in pairs(value) do
                     if type(v) == "table" then
-                        LockSmithDB[key][k] = {}
+                        LockSmithProDB[key][k] = {}
                         for k2, v2 in pairs(v) do
-                            LockSmithDB[key][k][k2] = v2
+                            LockSmithProDB[key][k][k2] = v2
                         end
                     else
-                        LockSmithDB[key][k] = v
+                        LockSmithProDB[key][k] = v
                     end
                 end
             else
-                LockSmithDB[key] = value
+                LockSmithProDB[key] = value
             end
         end
     end
 
     -- Ensure key strings always have defaults (avoid nil/empty errors)
-    if type(LockSmithDB.adMessage) ~= "string" or LockSmithDB.adMessage == "" then
-        LockSmithDB.adMessage = defaultSettings.adMessage
+    if type(LockSmithProDB.adMessage) ~= "string" or LockSmithProDB.adMessage == "" then
+        LockSmithProDB.adMessage = defaultSettings.adMessage
     end
-    if type(LockSmithDB.lowSkillMessage) ~= "string" or LockSmithDB.lowSkillMessage == "" then
-        LockSmithDB.lowSkillMessage = defaultSettings.lowSkillMessage
+    if type(LockSmithProDB.lowSkillMessage) ~= "string" or LockSmithProDB.lowSkillMessage == "" then
+        LockSmithProDB.lowSkillMessage = defaultSettings.lowSkillMessage
     end
-    if type(LockSmithDB.thankYouMessage) ~= "string" or LockSmithDB.thankYouMessage == "" then
-        LockSmithDB.thankYouMessage = defaultSettings.thankYouMessage
+    if type(LockSmithProDB.thankYouMessage) ~= "string" or LockSmithProDB.thankYouMessage == "" then
+        LockSmithProDB.thankYouMessage = defaultSettings.thankYouMessage
     end
-    if LockSmithDB.thankYouWhisper == nil then
-        LockSmithDB.thankYouWhisper = defaultSettings.thankYouWhisper
+    if LockSmithProDB.thankYouWhisper == nil then
+        LockSmithProDB.thankYouWhisper = defaultSettings.thankYouWhisper
+    end
+    if LockSmithProDB.autoInviteWhisper == nil then
+        LockSmithProDB.autoInviteWhisper = defaultSettings.autoInviteWhisper
+    end
+    if LockSmithProDB.popupOnAnyWhisper == nil then
+        LockSmithProDB.popupOnAnyWhisper = defaultSettings.popupOnAnyWhisper
+    end
+    if LockSmithProDB.playSoundEffects == nil then
+        LockSmithProDB.playSoundEffects = defaultSettings.playSoundEffects
+    end
+    if LockSmithProDB.debugChat == nil then
+        LockSmithProDB.debugChat = defaultSettings.debugChat
+    end
+    if LockSmithProDB.autoMarkSelf == nil then
+        LockSmithProDB.autoMarkSelf = defaultSettings.autoMarkSelf
+    end
+    if LockSmithProDB.autoMarkCustomers == nil then
+        LockSmithProDB.autoMarkCustomers = defaultSettings.autoMarkCustomers
+    end
+    if type(LockSmithProDB.includeKeywords) ~= "string" then
+        LockSmithProDB.includeKeywords = defaultSettings.includeKeywords
+    end
+    if type(LockSmithProDB.excludeKeywords) ~= "string" then
+        LockSmithProDB.excludeKeywords = defaultSettings.excludeKeywords
     end
 
-    if type(LockSmithDB.stats) ~= "table" then
-        LockSmithDB.stats = {}
+    if type(LockSmithProDB.stats) ~= "table" then
+        LockSmithProDB.stats = {}
     end
-    if type(LockSmithDB.stats.totalGold) ~= "number" then
-        LockSmithDB.stats.totalGold = 0
+    if type(LockSmithProDB.stats.totalGold) ~= "number" then
+        LockSmithProDB.stats.totalGold = 0
     end
-    if type(LockSmithDB.stats.totalJobs) ~= "number" then
-        LockSmithDB.stats.totalJobs = 0
+    if type(LockSmithProDB.stats.totalJobs) ~= "number" then
+        LockSmithProDB.stats.totalJobs = 0
     end
-    if type(LockSmithDB.stats.lastSessionGold) ~= "number" then
-        LockSmithDB.stats.lastSessionGold = 0
+    if type(LockSmithProDB.stats.lastSessionGold) ~= "number" then
+        LockSmithProDB.stats.lastSessionGold = 0
     end
-    if type(LockSmithDB.stats.totalBoxes) ~= "number" then
-        LockSmithDB.stats.totalBoxes = 0
+    if type(LockSmithProDB.stats.bestSessionGold) ~= "number" then
+        LockSmithProDB.stats.bestSessionGold = 0
     end
-    if type(LockSmithDB.stats.boxesOpened) ~= "table" then
-        LockSmithDB.stats.boxesOpened = {}
+    if type(LockSmithProDB.stats.totalBoxes) ~= "number" then
+        LockSmithProDB.stats.totalBoxes = 0
+    end
+    if type(LockSmithProDB.stats.boxesOpened) ~= "table" then
+        LockSmithProDB.stats.boxesOpened = {}
     end
 
-    if type(LockSmithDB.adChannels) ~= "table" then
-        LockSmithDB.adChannels = {}
+    if type(LockSmithProDB.adChannels) ~= "table" then
+        LockSmithProDB.adChannels = {}
     end
-    if LockSmithDB.adChannels.trade == nil then
-        LockSmithDB.adChannels.trade = defaultSettings.adChannels.trade
+    if LockSmithProDB.adChannels.trade == nil then
+        LockSmithProDB.adChannels.trade = defaultSettings.adChannels.trade
     end
-    if LockSmithDB.adChannels.general == nil then
-        LockSmithDB.adChannels.general = defaultSettings.adChannels.general
+    if LockSmithProDB.adChannels.general == nil then
+        LockSmithProDB.adChannels.general = defaultSettings.adChannels.general
     end
-    if LockSmithDB.adChannels.lfg == nil then
-        LockSmithDB.adChannels.lfg = defaultSettings.adChannels.lfg
+    if LockSmithProDB.adChannels.lfg == nil then
+        LockSmithProDB.adChannels.lfg = defaultSettings.adChannels.lfg
     end
-    if LockSmithDB.adChannels.yell == nil then
-        LockSmithDB.adChannels.yell = defaultSettings.adChannels.yell
+    if LockSmithProDB.adChannels.yell == nil then
+        LockSmithProDB.adChannels.yell = defaultSettings.adChannels.yell
     end
 end
 
@@ -134,51 +180,65 @@ end
 -- ================================
 
 -- Start the addon
-function LockSmith:Start()
+function LockSmithPro:Start()
     if isRunning then
-        print("|cff00ff00LockSmith:|r Already running!")
+        print("|cff00ff00LockSmithPro:|r Already running!")
         return
     end
 
+    sessionGeneration = sessionGeneration + 1
     isRunning = true
-    LockSmith.Statistics:InitSession()
+    LockSmithProDB.enabled = true
+    LockSmithPro.Statistics:InitSession()
 
     -- Update skill cache
-    LockSmith.Skills:GetLockpickingSkill()
-    local skill, maxSkill = LockSmith.Skills:GetCachedSkill()
+    LockSmithPro.Skills:GetLockpickingSkill()
+    local skill, maxSkill = LockSmithPro.Skills:GetCachedSkill()
 
-    print("|cff00ff00LockSmith:|r Started! Lockpicking skill: " .. skill .. "/" .. maxSkill)
+    print("|cff00ff00LockSmithPro:|r Started! Lockpicking skill: " .. LockSmithPro.Skills:GetDisplayText())
 
     -- Start ad timer if enabled
-    if LockSmithDB.adTimerEnabled then
-        LockSmith.Advertisement:StartAdTimer()
+    if LockSmithProDB.adTimerEnabled then
+        LockSmithPro.Advertisement:StartAdTimer()
+    end
+
+    -- Update dashboard if open
+    if LockSmithPro.Dashboard then
+        LockSmithPro.Dashboard:UpdateJobBoardStatus()
     end
 end
 
 -- Stop the addon
-function LockSmith:Stop()
+function LockSmithPro:Stop()
     if not isRunning then
-        print("|cff00ff00LockSmith:|r Already stopped!")
+        print("|cff00ff00LockSmithPro:|r Already stopped!")
         return
     end
 
+    sessionGeneration = sessionGeneration + 1
     isRunning = false
+    LockSmithProDB.enabled = false
 
     -- Save session stats
-    LockSmith.Statistics:SaveSessionStats()
+    LockSmithPro.Statistics:SaveSessionStats()
 
-    local sessionGold = LockSmith.Statistics:GetSessionGold()
-    print("|cff00ff00LockSmith:|r Stopped! Session earnings: " .. LockSmith.Utils:FormatGold(sessionGold))
+    local sessionGold = LockSmithPro.Statistics:GetSessionGold()
+    print("|cff00ff00LockSmithPro:|r Stopped! Session earnings: " .. LockSmithPro.Utils:FormatGold(sessionGold))
 
     -- Stop ad timer
-    LockSmith.Advertisement:StopAdTimer()
+    LockSmithPro.Advertisement:StopAdTimer()
 
     -- Clear session ignore list
-    LockSmith.ChatMonitor:ClearSessionIgnore()
+    LockSmithPro.ChatMonitor:ClearSessionIgnore()
+
+    -- Update dashboard if open
+    if LockSmithPro.Dashboard then
+        LockSmithPro.Dashboard:UpdateJobBoardStatus()
+    end
 end
 
 -- Toggle addon on/off
-function LockSmith:Toggle()
+function LockSmithPro:Toggle()
     if isRunning then
         self:Stop()
     else
@@ -187,7 +247,7 @@ function LockSmith:Toggle()
 end
 
 -- Check if addon is running
-function LockSmith:IsRunning()
+function LockSmithPro:IsRunning()
     return isRunning
 end
 
@@ -198,28 +258,41 @@ end
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
+eventFrame:RegisterEvent("PLAYER_LOGOUT")
 
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "ADDON_LOADED" then
         local loadedAddon = ...
         if loadedAddon == addonName then
             InitializeSavedVariables()
-            print("|cff00ff00LockSmith|r v" .. addonVersion .. " loaded! Type /locksmith for options")
+            print("|cff00ff00LockSmithPro|r v" .. addonVersion .. " loaded! Type /LockSmithPro for options")
         end
 
+    elseif event == "PLAYER_LOGOUT" then
+        if isRunning then LockSmithPro.Statistics:SaveSessionStats() end
     elseif event == "PLAYER_LOGIN" then
+        -- Register Blizzard Settings/AddOns panel so it appears in the AddOns list
+        if LockSmithPro.UI and LockSmithPro.UI.EnsureSettingsPanelRegistered then
+            LockSmithPro.UI:EnsureSettingsPanelRegistered()
+        end
+
+        -- Initialize dashboard
+        if LockSmithPro.Dashboard then
+            LockSmithPro.Dashboard:Initialize()
+        end
+
         -- Update skill on login
-        LockSmith.Skills:GetLockpickingSkill()
+        LockSmithPro.Skills:GetLockpickingSkill()
 
         -- Initialize minimap button
-        LockSmith.Minimap:InitializeButton()
+        LockSmithPro.Minimap:InitializeButton()
 
         -- Register chat monitoring events
-        LockSmith.ChatMonitor:RegisterEvents()
+        LockSmithPro.ChatMonitor:RegisterEvents()
 
         -- Auto-start if it was running before
-        if LockSmithDB.enabled then
-            LockSmith:Start()
+        if LockSmithProDB.enabled then
+            LockSmithPro:Start()
         end
     end
 end)

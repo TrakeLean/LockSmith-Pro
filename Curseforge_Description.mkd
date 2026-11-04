@@ -1,0 +1,89 @@
+# LockSmithPro — Lockpicking Service Manager
+
+**Find customers, manage lockpicking requests, and keep track of your tips.**
+
+LockSmithPro gives rogues a dashboard for running a lockpicking service. Monitor chat for requests, invite customers, manage your job board, and track earnings while you focus on opening boxes.
+
+## What's New in 1.1.0
+
+- **Phrase-triggered auto-invites:** Optionally invite players whose requests match your configured include keywords.
+- **WoW Forever names:** Preserve both first names and surnames when inviting, whispering, and tracking customers. Characters with the same first name stay separate.
+- **Memory improvements:** Reuse job cards and animations, limit the board to 100 customers, and clean up temporary tracking data.
+- **Updated client APIs:** Add compatibility handling for current Retail, Classic Era, TBC Anniversary, MoP Classic, and WoW Forever clients.
+
+The 1.1.0 build has passed automated simulations for these five client families. Live in-game validation is still pending.
+
+## 🎯 Find and Manage Requests
+
+- Monitor **Trade, General, LFG, Say, and Whisper**, with individual channel toggles.
+- Set comma-separated **include and exclude keywords** to control which requests appear.
+- Identify supported junkboxes and lockboxes from **item links**, independent of the item's displayed language. Keyword filters remain customizable for your language.
+- See customer names, messages, and known box skill requirements on the job board.
+- **Invite, Whisper, or Ignore** customers directly from their job cards.
+- Keep the newest request per customer, up to **100 jobs**. Requests older than 30 minutes are removed when new ones arrive.
+
+When the client exposes your lockpicking rank, LockSmithPro checks it against known box requirements. If no rank is available, it shows **Unknown** instead of incorrectly treating your skill as zero.
+
+## 🤝 Optional Auto-Invites
+
+Enable **Auto-invite matching requests** in the dashboard's Settings tab to invite customers when their messages match your include keywords. This feature is **off by default**.
+
+Auto-invites respect enabled channels, exclusions, session ignores, recent trade partners, known skill requirements, group permissions, and cooldowns. Already-grouped players are skipped. Requests remain on the board if an invitation cannot be sent.
+
+The separate **Auto-invite on Whisper** option can also invite non-matching whisper senders. Leave it disabled if you want invitations triggered only by matching phrases.
+
+Invites have a **30-second cooldown per customer** and an additional limit across different customers. Automated communication depends on what the game client permits.
+
+## 📊 Track Your Service
+
+- Track **session and lifetime earnings**, job totals, and average tips.
+- Keep **last-session and best-session earnings**.
+- Count supported boxes received through trade and Pick Lock casts on the trade window's **“Will Not Be Traded” slot**.
+- Record trade totals after the game confirms completion.
+- Group repeat trades with the same customer within a **10-minute window** into one job.
+- Keep full customer identities, including realms on realm-based clients and surnames in Forever.
+
+## 📢 Advertise Your Service
+
+Write your own advertisement and use `%SPELL_LINK%` to insert a Pick Lock spell link.
+
+Choose **Trade, General, LFG, or Yell**, then click **Send Ad** or **Yell Ad**. The optional timer reminds you when an advertisement is ready; **it does not post automatically**. Advertisement channel lookup currently uses English channel names.
+
+## 💬 Replies and Customer Tools
+
+- Optional **low-skill replies** when an exposed skill rank is below a known box requirement.
+- Customizable **thank-you whispers** after tipped trades, using `%TIP%` for the amount.
+- Recent-trade tracking to reduce follow-up “thank you” requests on the board.
+- Session ignores and group-member checks to avoid repeated requests.
+- Optional **Star marker for yourself** and a preset sequence of raid markers for customers, subject to group permissions and client restrictions.
+- Sound toggles, a draggable minimap button, and a resizable dashboard.
+
+## Getting Started
+
+1. Type **`/ls`** or left-click the minimap button to open the dashboard.
+2. Open **Settings** and choose your channels, include keywords, and exclusions.
+3. Click **Start** on the job board.
+4. Review incoming requests and use **Invite**, **Whisper**, or **Ignore**.
+5. Complete trades to update your statistics.
+6. Optionally enable phrase-triggered invitations or set an advertisement reminder.
+
+## Slash Commands
+
+Use `/ls` or `/LockSmithPro` with these commands:
+
+- `/ls` — Open the dashboard.
+- `/ls start` — Start monitoring.
+- `/ls stop` — Stop monitoring.
+- `/ls toggle` — Toggle monitoring on or off.
+- `/ls ad` — Submit your advertisement to enabled channels.
+- `/ls skill` — Display your exposed lockpicking rank, or Unknown.
+- `/ls stats` — Print earnings and job statistics.
+- `/ls minimap` — Show or hide the minimap button.
+
+To reset statistics, use **Reset Stats** in the dashboard's Statistics tab and confirm the prompt.
+
+---
+
+**Spend less time searching chat and more time helping customers.**
+
+Enjoying LockSmithPro? Leave a review or report a bug with your WoW version and any Lua error text.
