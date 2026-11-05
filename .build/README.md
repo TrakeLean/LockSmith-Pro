@@ -45,3 +45,7 @@ Tag mapping used by CurseForge:
 - `vX.Y.Z` => release
 - `vX.Y.Z-beta` / `vX.Y.Z-beta.N` => beta
 - `vX.Y.Z-alpha` / `vX.Y.Z-alpha.N` => alpha
+
+## Package-all-commits mode
+
+When CurseForge is configured to package all commits, an untagged push is packaged as an alpha. Check the project Files tab with alpha files included. Release tags continue to use the mapping above. A successful webhook delivery confirms receipt, not successful package creation.
