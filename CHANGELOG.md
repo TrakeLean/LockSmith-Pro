@@ -1,5 +1,10 @@
 # LockSmithPro - Changelog
 
+## Package 1.1.0-r1 - CurseForge packaging correction
+
+- Correct changelog metadata nesting so CurseForge can package the 1.1.0 update.
+- Addon functionality and in-game version remain 1.1.0.
+
 ## Version 1.1.0 - Current clients and bounded memory
 
 - Target current Retail, Era, TBC Anniversary, MoP, and Forever clients with flavor manifests.
