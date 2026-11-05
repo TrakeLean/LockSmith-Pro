@@ -6,6 +6,29 @@ LockSmithPro.Minimap = {}
 
 local minimapButton = nil
 local isDragging = false
+local ICON_TEXTURE = "Interface\\Icons\\INV_Misc_Key_03"
+local roundedQuadrants = {
+    ROUND = {true, true, true, true},
+    SQUARE = {false, false, false, false},
+    ["CORNER-TOPLEFT"] = {false, false, false, true},
+    ["CORNER-TOPRIGHT"] = {false, false, true, false},
+    ["CORNER-BOTTOMLEFT"] = {false, true, false, false},
+    ["CORNER-BOTTOMRIGHT"] = {true, false, false, false},
+    ["SIDE-LEFT"] = {false, true, false, true},
+    ["SIDE-RIGHT"] = {true, false, true, false},
+    ["SIDE-TOP"] = {false, false, true, true},
+    ["SIDE-BOTTOM"] = {true, true, false, false},
+    ["TRICORNER-TOPLEFT"] = {false, true, true, true},
+    ["TRICORNER-TOPRIGHT"] = {true, false, true, true},
+    ["TRICORNER-BOTTOMLEFT"] = {true, true, false, true},
+    ["TRICORNER-BOTTOMRIGHT"] = {true, true, true, false},
+}
+
+local function NormalizeAngle(angle)
+    angle = tonumber(angle)
+    if not angle or angle ~= angle or angle == math.huge or angle == -math.huge then return 225 end
+    return angle % 360
+end
 
 local function RefreshMinimapTooltip(button)
     GameTooltip:SetOwner(button, "ANCHOR_LEFT")
@@ -43,12 +66,16 @@ local function CreateMinimapButton()
     button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     button:RegisterForDrag("LeftButton")
 
-    -- Create the icon texture (using a lockpicking-themed icon)
-    local icon = button:CreateTexture(nil, "BACKGROUND")
-    icon:SetSize(18, 18)
-    icon:SetPoint("CENTER", 0, 0)
-    -- Using the Lockpicking skill icon
-    icon:SetTexture("Interface\\Icons\\Spell_Nature_MoonKey")
+    -- Align the artwork with the inset opening in the tracking border.
+    local background = button:CreateTexture(nil, "BACKGROUND")
+    background:SetSize(20, 20)
+    background:SetPoint("TOPLEFT", 7, -5)
+    background:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+
+    local icon = button:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(20, 20)
+    icon:SetPoint("TOPLEFT", 7, -5)
+    icon:SetTexture(ICON_TEXTURE)
     icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 
     -- Keep the icon inside the circular minimap frame
@@ -56,7 +83,7 @@ local function CreateMinimapButton()
         local mask = button:CreateMaskTexture()
         mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
         mask:SetPoint("CENTER", icon, "CENTER", 0, 0)
-        mask:SetSize(18, 18)
+        mask:SetSize(20, 20)
         icon:AddMaskTexture(mask)
         button.iconMask = mask
     end
@@ -69,17 +96,8 @@ local function CreateMinimapButton()
     overlay:SetPoint("TOPLEFT", 0, 0)
     overlay:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
 
-    -- Create highlight
-    local highlight = button:CreateTexture(nil, "HIGHLIGHT")
-    highlight:SetSize(18, 18)
-    highlight:SetPoint("CENTER", 0, 0)
-    highlight:SetTexture("Interface\\Icons\\Spell_Nature_MoonKey")
-    highlight:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-    highlight:SetBlendMode("ADD")
-
-    if button.iconMask and highlight.AddMaskTexture then
-        highlight:AddMaskTexture(button.iconMask)
-    end
+    -- Use the native hover glow instead of brightening a second copy of the icon.
+    button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
 
     -- Tooltip
     button:SetScript("OnEnter", function(self)
@@ -114,6 +132,7 @@ local function CreateMinimapButton()
     -- Dragging functionality
     button:SetScript("OnDragStart", function(self)
         isDragging = true
+        GameTooltip:Hide()
         self:LockHighlight()
         self:SetScript("OnUpdate", function() LockSmithPro.Minimap:UpdateButtonPosition() end)
     end)
@@ -124,24 +143,36 @@ local function CreateMinimapButton()
         self:SetScript("OnUpdate", nil)
 
         -- Save position
-        local position = LockSmithPro.Minimap:GetButtonAngle()
-        LockSmithProDB.minimapPosition = position
+        LockSmithPro.Minimap:SetButtonPosition(LockSmithProDB.minimapPosition)
+    end)
+
+    button:SetScript("OnHide", function(self)
+        isDragging = false
+        self:UnlockHighlight()
+        self:SetScript("OnUpdate", nil)
     end)
 
     minimapButton = button
+    local function Reposition()
+        LockSmithPro.Minimap:SetButtonPosition(LockSmithProDB.minimapPosition)
+    end
+    Minimap:HookScript("OnSizeChanged", Reposition)
+    Minimap:HookScript("OnShow", Reposition)
     return button
 end
 
 -- Update minimap button position while dragging
 function LockSmithPro.Minimap:UpdateButtonPosition()
-    if not minimapButton then return end
+    if not minimapButton or not isDragging then return end
 
     local mx, my = Minimap:GetCenter()
     local px, py = GetCursorPosition()
     local scale = Minimap:GetEffectiveScale()
+    if not mx or not my or not px or not py or not scale or scale <= 0 then return end
 
     px, py = px / scale, py / scale
 
+    if px == mx and py == my then return end
     local angle = math.deg(math.atan2(py - my, px - mx))
 
     LockSmithProDB.minimapPosition = angle
@@ -152,10 +183,22 @@ end
 function LockSmithPro.Minimap:SetButtonPosition(angle)
     if not minimapButton then return end
 
-    local radius = 80
+    angle = NormalizeAngle(angle)
+    LockSmithProDB.minimapPosition = angle
     local rads = math.rad(angle)
-    local x = math.cos(rads) * radius
-    local y = math.sin(rads) * radius
+    local dx, dy = math.cos(rads), math.sin(rads)
+    local radiusX = math.max(1, Minimap:GetWidth() / 2 + 10)
+    local radiusY = math.max(1, Minimap:GetHeight() / 2 + 10)
+    local shape = GetMinimapShape and GetMinimapShape() or "ROUND"
+    local quadrants = roundedQuadrants[shape] or roundedQuadrants.ROUND
+    local quadrant = 1 + (dx < 0 and 1 or 0) + (dy > 0 and 2 or 0)
+    local distance
+    if quadrants[quadrant] then
+        distance = 1 / math.sqrt((dx / radiusX)^2 + (dy / radiusY)^2)
+    else
+        distance = 1 / math.max(math.abs(dx) / radiusX, math.abs(dy) / radiusY)
+    end
+    local x, y = dx * distance, dy * distance
 
     minimapButton:ClearAllPoints()
     minimapButton:SetPoint("CENTER", Minimap, "CENTER", x, y)
@@ -168,7 +211,7 @@ function LockSmithPro.Minimap:GetButtonAngle()
     local mx, my = Minimap:GetCenter()
     local bx, by = minimapButton:GetCenter()
 
-    if not bx or not by then return 0 end
+    if not mx or not my or not bx or not by then return NormalizeAngle(LockSmithProDB.minimapPosition) end
 
     local angle = math.deg(math.atan2(by - my, bx - mx))
     return angle

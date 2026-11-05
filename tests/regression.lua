@@ -34,6 +34,7 @@ function methods:GetWidth() return self.width end
 function methods:GetHeight() return self.height end
 function methods:GetCenter() return 0,0 end
 function methods:GetPoint() return "CENTER",nil,"CENTER",0,0 end
+function methods:SetPoint(...) self.point={...} end
 function methods:GetEffectiveScale() return 1 end
 function methods:SetText(t) self.text=t end
 function methods:GetText() return self.text or "" end
@@ -55,6 +56,7 @@ function CreateFrame(kind,name,parent,template)
     return f
 end
 UIParent=object(); Minimap=object(); GameTooltip=object()
+Minimap:SetSize(140,140)
 UISpecialFrames={}; SlashCmdList={}; StaticPopupDialogs={}; SOUNDKIT={TELL_MESSAGE=1}
 Settings={RegisterCanvasLayoutCategory=function() return {GetID=function() return 42 end} end, RegisterAddOnCategory=noop, OpenToCategory=function(id) assert(id==42,"settings category must be ID") end}
 GetBuildInfo=function() return "test","test","test",interface end
@@ -264,10 +266,90 @@ event("TRADE_SHOW");event("TRADE_ACCEPT_UPDATE",1,1)
 local totalBefore=LockSmithProDB.stats.totalGold
 advance(1);event("UI_INFO_MESSAGE",1,ERR_TRADE_COMPLETE)
 eq(LockSmithProDB.stats.totalGold,totalBefore+750,"new trade survives old close timer")
--- Locked communication is skipped without errors or retry queues.
+-- Background communication remains gated; manual buttons reach the native API.
 local sendsBefore=#whispers
-chatLocked=true;A.Advertisement:SendAdvertisement();eq(#whispers,sendsBefore);chatLocked=false
-outgoingRestricted=true;A.AutoResponse:SendThankYouWhisper("Alex Oak",50);eq(#whispers,sendsBefore);outgoingRestricted=false
--- Current UI sender must work without the old global SendChatMessage.
-A.Advertisement:SendAdvertisement()
-io.write("PASS ",flavor,": identity, chat guards, invites, skill fallback, UI pooling, timers, trade events; ",allocations," frames, ",regions," regions\n")
+chatLocked=true;eq(A.Compat:SendChat("hello","YELL"),false);eq(#whispers,sendsBefore)
+outgoingRestricted=true
+A.AutoResponse:SendThankYouWhisper("Alex Oak",50);eq(#whispers,sendsBefore)
+local originalAd=LockSmithProDB.adMessage
+local originalChannels=LockSmithProDB.adChannels
+LockSmithProDB.adMessage="%SPELL_LINK% service available"
+LockSmithProDB.adChannels={yell=true}
+assert(A.Advertisement:SendAdvertisement());eq(#whispers,sendsBefore+1)
+eq(whispers[#whispers].channel,"YELL")
+assert(A.Advertisement:SendYellAdvertisement());eq(#whispers,sendsBefore+2)
+chatLocked=false;outgoingRestricted=false
+-- Expanded links count against the byte limit; neither button sends malformed ads.
+LockSmithProDB.adMessage=string.rep("x",220).."%SPELL_LINK%"
+sendsBefore=#whispers
+eq(A.Advertisement:SendAdvertisement(),false)
+eq(A.Advertisement:SendYellAdvertisement(),false)
+eq(#whispers,sendsBefore)
+local valid,reason=A.Compat:ValidateChatMessage(A.Advertisement:ProcessAdMessage(LockSmithProDB.adMessage))
+eq(valid,false);eq(reason,"too_long")
+eq(A.Compat:ValidateChatMessage(string.rep("x",255)),true)
+eq(A.Compat:ValidateChatMessage("   "),false)
+-- API rejection is not reported as dispatch and does not clear the ready reminder.
+LockSmithProDB.adMessage="Lockpicking service"
+local nativeSend=C_ChatInfo.SendChatMessage
+C_ChatInfo.SendChatMessage=function() error("hardware event or client restriction") end
+A.Advertisement.adReady=true
+eq(A.Advertisement:SendAdvertisement(),false);eq(A.Advertisement.adReady,true)
+eq(A.Advertisement:SendYellAdvertisement(),false)
+C_ChatInfo.SendChatMessage=nativeSend
+-- Unjoined channels are not submitted; missing namespaced API uses the legacy API.
+local originalGetChannelName=GetChannelName
+GetChannelName=function() return 0 end
+LockSmithProDB.adChannels={trade=true,general=true}
+eq(A.Advertisement:SendAdvertisement(),false);eq(#whispers,sendsBefore)
+GetChannelName=originalGetChannelName
+local legacySend=SendChatMessage
+SendChatMessage=nativeSend;C_ChatInfo.SendChatMessage=nil
+assert(A.Advertisement:SendYellAdvertisement())
+SendChatMessage=legacySend;C_ChatInfo.SendChatMessage=nativeSend
+LockSmithProDB.adMessage=originalAd;LockSmithProDB.adChannels=originalChannels
+
+-- The minimap button follows the map edge at every size, shape and UI scale.
+local button=LockSmithProMinimapButton
+local function near(actual,expected,label)
+    assert(math.abs(actual-expected)<0.00001,(label or "position")..": "..actual.." ~= "..expected)
+end
+local function offset() return button.point[4],button.point[5] end
+local shape="ROUND"
+GetMinimapShape=function() return shape end
+A.Minimap:SetButtonPosition(0)
+local x,y=offset();near(x,80);near(y,0)
+Minimap:SetSize(280,280);Minimap.scripts.OnSizeChanged()
+x,y=offset();near(x,150);near(y,0)
+Minimap:SetSize(280,180)
+for _,angle in ipairs({0,45,90,135,180,225,270,315}) do
+    A.Minimap:SetButtonPosition(angle);x,y=offset()
+    near((x/150)^2+(y/100)^2,1,"ellipse edge")
+end
+shape="SQUARE"
+for _,angle in ipairs({0,45,90,135,180,225,270,315}) do
+    A.Minimap:SetButtonPosition(angle);x,y=offset()
+    near(math.max(math.abs(x)/150,math.abs(y)/100),1,"square edge")
+end
+shape="CORNER-TOPLEFT"
+A.Minimap:SetButtonPosition(135);x,y=offset();near((x/150)^2+(y/100)^2,1,"rounded corner")
+A.Minimap:SetButtonPosition(315);x,y=offset();near(math.max(math.abs(x)/150,math.abs(y)/100),1,"square corner")
+shape="custom-unknown"
+A.Minimap:SetButtonPosition(45);x,y=offset();near((x/150)^2+(y/100)^2,1,"unknown shape fallback")
+A.Minimap:SetButtonPosition(math.huge);eq(LockSmithProDB.minimapPosition,225)
+shape="ROUND"
+Minimap.GetCenter=function() return 100,80 end
+Minimap.GetEffectiveScale=function() return 1.5 end
+GetCursorPosition=function() return 600,120 end
+button.scripts.OnDragStart(button);button.scripts.OnUpdate(button)
+near(LockSmithProDB.minimapPosition,0,"scaled cursor angle")
+x,y=offset();near(x,150);near(y,0)
+Minimap.GetCenter=function() return nil,nil end
+button.scripts.OnUpdate(button);near(LockSmithProDB.minimapPosition,0,"hidden map preserves angle")
+button.scripts.OnDragStop(button);eq(button.scripts.OnUpdate,nil)
+button.scripts.OnDragStart(button);button.scripts.OnHide(button);eq(button.scripts.OnUpdate,nil)
+Minimap.GetCenter=nil;Minimap.GetEffectiveScale=nil;GetCursorPosition=nil;GetMinimapShape=nil
+Minimap:SetSize(140,140)
+A.Minimap:SetButtonPosition(90);Minimap:SetSize(220,220);Minimap.scripts.OnSizeChanged()
+x,y=offset();near(x,0);near(y,120,"resize keeps saved angle")
+io.write("PASS ",flavor,": identity, chat guards, manual ads, minimap geometry, invites, skill fallback, UI pooling, timers, trade events; ",allocations," frames, ",regions," regions\n")

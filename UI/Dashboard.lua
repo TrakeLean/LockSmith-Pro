@@ -522,13 +522,8 @@ function LockSmithPro.Dashboard:InitializeJobBoard(content)
     yellAdBtn:SetPoint("RIGHT", adButtonFrame, "RIGHT", -5, 0)
     yellAdBtn:SetText("Yell Ad")
     yellAdBtn:SetScript("OnClick", function()
-        if LockSmithPro.Advertisement and LockSmithProDB.adMessage then
-            local message = LockSmithPro.Advertisement:ProcessAdMessage(LockSmithProDB.adMessage)
-            if LockSmithPro.Compat:SendChat(message, "YELL") then
-                print("|cff00ff00LockSmithPro:|r Advertisement submitted to Yell")
-            else
-                print("|cffff0000LockSmithPro:|r Advertisement unavailable or restricted")
-            end
+        if LockSmithPro.Advertisement then
+            LockSmithPro.Advertisement:SendYellAdvertisement()
         end
     end)
 

@@ -1,5 +1,14 @@
 # LockSmithPro - Changelog
 
+## Version 1.1.1 - Minimap and manual advertisements
+
+- Use a clearer key icon with a native hover glow and aligned circular artwork.
+- Keep the minimap button on the edge of resized, rectangular, square, and rounded-corner maps; preserve its saved angle.
+- Clean up dragging when the button is hidden and handle temporarily unavailable map coordinates.
+- Submit manually clicked advertisements through the native chat API without the background-automation preflight gate. Native client restrictions still apply; automatic replies retain their existing guards.
+- Explain empty, overlong, unavailable-channel, and client-rejected advertisements separately.
+- Add simulated regressions for minimap geometry, UI scale, manual sends, message length, and client rejection. Live in-game confirmation remains pending.
+
 ## Package 1.1.0-r1 - CurseForge packaging correction
 
 - Correct changelog metadata nesting so CurseForge can package the 1.1.0 update.
