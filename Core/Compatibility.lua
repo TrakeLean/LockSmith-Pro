@@ -54,13 +54,25 @@ function Compat:UnitAddress(unit)
     return name
 end
 
+function Compat:ValidateChatMessage(message)
+    if not self:IsString(message) or not message:find("%S") then return false, "empty" end
+    if #message > 255 then return false, "too_long" end
+    return true
+end
+
 -- Returns whether a send was dispatched, never a claim of server delivery.
-function Compat:SendChat(message, channel, target)
-    if not self:CanAutomate() or not self:IsString(message) or message == "" or #message > 255 then return false end
-    if not self:IsReadable(target) then return false end
+-- Button/slash-command sends use the native API in the user's input event.
+-- Its restrictions still apply; automation gates only preflight background sends.
+function Compat:SendChat(message, channel, target, userInitiated)
+    local valid, reason = self:ValidateChatMessage(message)
+    if not valid then return false, reason end
+    if not userInitiated and not self:CanAutomate() then return false, "restricted" end
+    if not self:IsReadable(target) then return false, "restricted" end
     local send = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
-    if not send then return false end
-    return pcall(send, message, channel, nil, target)
+    if not send then return false, "unavailable" end
+    local ok, result = pcall(send, message, channel, nil, target)
+    if not ok or result == false then return false, "rejected" end
+    return true
 end
 
 function Compat:OpenWhisper(target)

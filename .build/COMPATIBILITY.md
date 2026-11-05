@@ -1,4 +1,4 @@
-# LockSmithPro 1.1.0 compatibility notes
+# LockSmithPro compatibility notes
 
 Prepared 2026-11-04 from GitHub `dashboard-redesign` commit `0f3ef365d62b23d00bd91b9ddada21a33929700d`. The GitHub default branch contains an older addon named LockSmith; this update preserves the published LockSmithPro dashboard and saved-variable name.
 
@@ -48,4 +48,4 @@ Mocks cannot emulate Blizzard's secure execution/taint engine, the live server, 
 6. Let busy city chat run for at least 30 minutes with the board open and hidden. Resize repeatedly, clear jobs, and restart the advertisement timer. Compare memory after garbage collection and frame counts after warm-up; they should plateau. Verify long Forever names wrap without covering action buttons.
 7. Send advertisements manually and through the Yell button. Check available channels in the client language; advertisement lookup still uses the existing English channel labels. Monitoring itself uses numeric channel IDs and is independent of locale.
 
-This build is prepared for in-game validation. No release tag or CurseForge upload has been performed.
+CurseForge successfully packaged `v1.1.0-r1` after correcting the `.pkgmeta` changelog nesting (build #371365, file #9448465). The 1.1.1 patch adds size/shape-aware minimap placement and separates manual ad submissions from background-automation checks. Its regressions cover all five profiles; actual client rendering and advertisement delivery still require in-game confirmation.

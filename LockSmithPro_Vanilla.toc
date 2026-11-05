@@ -2,7 +2,7 @@
 ## Title: LockSmithPro
 ## Notes: Automated lockpicking service addon for Rogues. Monitors chat for lockpick requests, manages invites, and tracks tips.
 ## Author: 0xTrk
-## Version: 1.1.0
+## Version: 1.1.1
 ## IconTexture: Interface\AddOns\LockSmithPro\logo\logonoText.tga
 ## SavedVariables: LockSmithProDB
 
