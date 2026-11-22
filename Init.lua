@@ -5,7 +5,7 @@ LockSmithPro = LockSmithPro or {}
 
 -- Addon metadata
 local addonName = ... or "LockSmithPro"
-local addonVersion = "1.1.0"
+local addonVersion = "1.1.2"
 
 -- Runtime state
 local isRunning = false

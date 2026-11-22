@@ -113,7 +113,10 @@ function LockSmithPro.Utils:InvitePlayer(target, automatic)
     local compat = LockSmithPro.Compat
     local key = compat:NameKey(target)
     if not key or (InCombatLockdown and InCombatLockdown()) then return false end
-    if automatic and not compat:CanAutomate() then return false end
+    -- Chat lockdown still gates background actions. Outgoing chat permission
+    -- applies to messages; party invitations have their own permission check.
+    if automatic and C_ChatInfo and C_ChatInfo.InChatMessagingLockdown
+        and C_ChatInfo.InChatMessagingLockdown() then return false end
     if compat:IsGroupMember(target) then return false end
     if C_PartyInfo and C_PartyInfo.CanInvite and not C_PartyInfo.CanInvite() then return false end
     if IsInGroup and IsInGroup() then

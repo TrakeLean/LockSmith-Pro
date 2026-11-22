@@ -113,7 +113,7 @@ local function CreateSettingsPanel()
     -- Version
     local version = scrollChild:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     version:SetPoint("TOPLEFT", 16, yOffset)
-    version:SetText("Version 1.1.0")
+    version:SetText("Version 1.1.2")
     yOffset = yOffset - 30
 
     -- ================================

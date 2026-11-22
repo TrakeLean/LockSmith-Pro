@@ -1,7 +1,7 @@
 # LockSmithPro - Professional Lockpicking Service Addon
 
 ![Available on CurseForge](https://img.shields.io/badge/Available_on-CurseForge-6441A4?style=flat&logo=curseforge)
-![Version](https://img.shields.io/badge/Version-1.1.0-brightgreen)
+![Version](https://img.shields.io/badge/Version-1.1.2-brightgreen)
 ![WoW Compatibility](https://img.shields.io/badge/WoW-Classic%20Era%20|%20TBC%20Anniversary%20|%20MoP%20|%20Retail%20|%20Forever-blue)
 
 **The ultimate lockpicking business automation addon for World of Warcraft!** Transform your Rogue into a professional locksmith with automatic chat monitoring, smart notifications, comprehensive earnings tracking, and powerful automation tools. Targets current Retail, Classic Era, TBC Anniversary, MoP Classic, and WoW Forever clients.
@@ -379,7 +379,7 @@ LockSmithPro/
 
 ## 📖 Version History
 
-**Current Version:** 1.1.0
+**Current Version:** 1.1.2
 
 ### Recent Updates
 - Initial release with full feature set

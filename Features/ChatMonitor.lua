@@ -122,17 +122,13 @@ function LockSmithPro.ChatMonitor:ProcessLockpickRequest(message, sender, channe
 
     -- Check exclude keywords first (if any exist, message must NOT contain them)
     if LockSmithProDB.excludeKeywords and LockSmithProDB.excludeKeywords ~= "" then
-        local excludeList = {}
         for keyword in string.gmatch(LockSmithProDB.excludeKeywords, "[^,]+") do
-            local trimmed = string.match(keyword, "^%s*(.-)%s*$") -- Trim whitespace
-            if trimmed ~= "" then
-                table.insert(excludeList, string.lower(trimmed))
-            end
-        end
-
-        for _, excludeWord in ipairs(excludeList) do
-            if string.find(lowerMsg, excludeWord, 1, true) then
-                return -- Message contains excluded keyword, ignore it
+            local term = keyword:match("^%s*(.-)%s*$"):lower()
+            -- Short abbreviations such as AV and AB must stand on their own.
+            if term:match("^[a-z][a-z]$") then
+                if lowerMsg:find("%f[%w_\128-\255]" .. term .. "%f[^%w_\128-\255]") then return end
+            elseif term ~= "" and lowerMsg:find(term, 1, true) then
+                return
             end
         end
     end

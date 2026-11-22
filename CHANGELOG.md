@@ -1,5 +1,10 @@
 # LockSmithPro - Changelog
 
+## Version 1.1.2 - Keyword auto-invites
+
+- Fixed two-letter exclusions such as “AV” and “AB” hiding requests that contain ordinary words such as “have” or “available”. Standalone abbreviations still trigger the exclusion.
+- Fixed matching requests appearing on the job board without an invite when the client restricts outgoing addon chat but permits party invitations. Combat, chat lockdown, group permissions and invite cooldowns still apply.
+
 ## Version 1.1.1 - Minimap and manual advertisements
 
 - Use a clearer key icon with a native hover glow and aligned circular artwork.

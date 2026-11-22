@@ -131,6 +131,7 @@ end
 local function eq(a,b,msg) assert(a==b,(msg or "mismatch")..": "..tostring(a).." ~= "..tostring(b)) end
 local function channel(msg,sender,id) event("CHAT_MSG_CHANNEL",msg,sender,nil,nil,nil,nil,id,1,"Localized channel") end
 for line in io.lines("LockSmithPro.toc") do
+    line = line:gsub("\r$", "")
     if line:match("%.lua$") then assert(loadfile((line:gsub("\\","/"))))("LockSmithPro") end
 end
 event("ADDON_LOADED","LockSmithPro")
@@ -161,10 +162,12 @@ if flavor=="classic" then
     A.Skills:UpdateCache()
 end
 -- Matching respects channels, exclusions, ignores, skill and global cooldown.
-LockSmithProDB.autoInviteOnMatch=true
-LockSmithProDB.excludeKeywords="wts"
-channel("need lockpick","Buyer One",2)
-eq(#invites,1,"automatic invite when client permits")
+LockSmithProMatchInviteCheck:SetChecked(true)
+LockSmithProMatchInviteCheck.scripts.OnClick(LockSmithProMatchInviteCheck)
+LockSmithProIncludeBox:SetText("sealed parcel, lockpick")
+LockSmithProIncludeBox.scripts.OnTextChanged(LockSmithProIncludeBox, true)
+channel("I have a SEALED PARCEL available","Buyer One",2)
+eq(invites[1],"Buyer One","default AV exclusion inside an ordinary word")
 local sent=#invites
 channel("need lockpick","Buyer One",2);eq(#invites,sent)
 channel("need lockpick","Buyer Two",2);eq(#invites,sent,"aggregate invite throttle")
@@ -172,14 +175,22 @@ advance(31)
 A.ChatMonitor:AddToSessionIgnore("Ignored One")
 channel("need lockpick","Ignored One",2);eq(#invites,sent)
 channel("wts lockpick","Seller One",2);eq(#invites,sent)
+channel("I have a sealed parcel for (AV)!","AV Buyer",2);eq(#invites,sent,"standalone AV excluded")
+channel("AB: need lockpick","AB Buyer",2);eq(#invites,sent,"standalone AB excluded")
 channel("need lockpick","Custom One",777);eq(#invites,sent)
 LockSmithProDB.monitorTrade=false;channel("need lockpick","Disabled One",2);eq(#invites,sent);LockSmithProDB.monitorTrade=true
 channel(secret,"Secret One",2);channel("lockpick",secret,2);channel("lockpick","Secret Two",secret)
 combat=true;channel("need lockpick","Combat One",2);eq(#invites,sent);combat=false
 leader=false;groupCount=2;channel("need lockpick","No Leader",2);eq(#invites,sent);leader=true;groupCount=0
 chatLocked=true;channel("need lockpick","Locked One",2);eq(#invites,sent);chatLocked=false
-outgoingRestricted=true;channel("need lockpick","Restricted One",2);eq(#invites,sent);outgoingRestricted=false
+outgoingRestricted=true
+event("CHAT_MSG_WHISPER","I have a sealed parcel","Restricted One")
+eq(#invites,sent+1,"outgoing chat restriction still permits a party invitation")
+eq(invites[#invites],"Restricted One","matching whisper invite target")
+sent=#invites
+advance(31)
 canInvite=false;channel("need lockpick","No Permission",2);eq(#invites,sent);canInvite=true
+outgoingRestricted=false
 if known then
     local countBefore=#invites
     channel("lockpick |Hitem:31952:0|h[Khorium]|h", "Too Hard", 2)
